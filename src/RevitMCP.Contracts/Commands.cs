@@ -60,7 +60,12 @@ public enum CommandKind
     /// <summary>Changes UI state (selection, active view, temporary isolate). Requires write opt-in.</summary>
     UiWrite,
     /// <summary>Changes the model inside a transaction. Requires write opt-in.</summary>
-    ModelWrite
+    ModelWrite,
+    /// <summary>
+    /// Handled entirely in the MCP server process and never sent over the pipe. Used for work that
+    /// needs nothing from Revit, so it stays out of Revit's process.
+    /// </summary>
+    ServerLocal
 }
 
 public sealed record CommandSpec(string Name, CommandKind Kind, string Description);
@@ -109,7 +114,7 @@ public static class CommandCatalog
         new(Commands.CreateDraftDetail, CommandKind.ModelWrite, "Create detail elements in a view."),
 
         new(Commands.ExportScheduleToCsv, CommandKind.Read, "Export a named schedule to CSV."),
-        new(Commands.ExtractPdfGeometry, CommandKind.BridgeLocal, "Extract geometry from a PDF (no Revit involvement)."),
+        new(Commands.ExtractPdfGeometry, CommandKind.ServerLocal, "Extract geometry from a PDF (runs in the MCP server; no Revit involvement)."),
     };
 
     private static readonly Dictionary<string, CommandSpec> ByName =
@@ -119,4 +124,12 @@ public static class CommandCatalog
 
     public static bool RequiresWriteConsent(string name) =>
         TryGet(name, out var s) && s.Kind is CommandKind.UiWrite or CommandKind.ModelWrite;
+
+    /// <summary>Commands the Revit add-in is expected to implement.</summary>
+    public static IEnumerable<CommandSpec> BridgeCommands =>
+        All.Where(c => c.Kind != CommandKind.ServerLocal);
+
+    /// <summary>Commands the MCP server answers by itself, without reaching Revit.</summary>
+    public static IEnumerable<CommandSpec> ServerLocalCommands =>
+        All.Where(c => c.Kind == CommandKind.ServerLocal);
 }

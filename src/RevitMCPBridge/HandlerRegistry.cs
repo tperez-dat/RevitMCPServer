@@ -50,6 +50,17 @@ public static class HandlerRegistry
             new SetSelectionHandler(),
             new OpenViewHandler(),
             new IsolateInViewHandler(),
+
+            // modelling / creation
+            new CreateWallHandler(),
+            new CreateGridHandler(),
+            new CreateStructuralColumnHandler(),
+            new CreateStructuralFramingHandler(),
+            new CreateFloorHandler(),
+            new CreateDraftDetailHandler(),
+
+            // export
+            new ExportScheduleToCsvHandler(),
         };
 
         AssertCoverage(handlers);
@@ -61,7 +72,8 @@ public static class HandlerRegistry
         var implemented = handlers.Select(h => h.Command)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var missing = RevitMCP.Contracts.CommandCatalog.All
+        // ServerLocal commands are answered by the MCP server and are not the add-in's to implement.
+        var missing = RevitMCP.Contracts.CommandCatalog.BridgeCommands
             .Select(c => c.Name)
             .Where(name => !implemented.Contains(name))
             .ToList();
