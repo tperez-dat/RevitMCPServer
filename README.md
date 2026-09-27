@@ -172,8 +172,9 @@ Any process running as your user can connect to a local named pipe. Reading a mo
 silently changing it is another. So:
 
 - **Reads always work.** Queries need no opt-in.
-- **Writes are refused until you turn them on**, per Revit session, from the ribbon toggle. Nothing
-  persists it — every Revit restart is back to read-only.
+- **Writes are refused until you turn them on**, per Revit session, from the ribbon toggle (or
+  **Add-Ins → External Tools → Toggle MCP Writes**). Nothing persists it — every Revit restart is
+  back to read-only.
 - Each write is one named transaction (`MCP: CREATE_WALL`), so it appears as a single, labelled,
   undoable step in Revit.
 - The pipe is ACL'd to your user account, and every request must carry the per-session token from
@@ -293,7 +294,7 @@ faster than reading the table.
 | "changes the model or the UI, and write mode is off" | Enable **Allow MCP Writes** on the ribbon |
 | "Revit did not reach an API context" | Revit is showing a modal dialog or running a long command. Dismiss it and retry |
 | "Timed out connecting to the pipe" | Revit closed, or another client holds the single allowed connection |
-| No **MCP Bridge** ribbon tab | The add-in failed to load. The log and the Revit add-in error dialog say why |
+| No **MCP Bridge** ribbon tab | The add-in failed to load, or the ribbon failed to build. Check `bridge.log`. The bridge still serves read-only tools without the ribbon, and **Add-Ins → External Tools → Toggle MCP Writes** enables writes without it |
 | `dotnet --list-sdks` prints nothing at all | A runtime-only `dotnet` is winning on PATH. Revit installs the .NET runtime machine-wide, and system PATH entries beat user ones, so it shadows a per-user SDK install. The build scripts detect this and pick a working SDK themselves; to fix your shell, run `$env:Path = "$env:USERPROFILE\.dotnet;$env:Path"` |
 | "No .NET SDK was found" from a build script | Genuinely no SDK. Install one for your user only, no admin needed — the error text gives the two commands |
 | `NETSDK1045: does not support targeting .NET 10.0` | Building the Revit 2027 configuration without the .NET 10 SDK. Install it, or build only the versions you have: `deploy-addin.cmd -RevitVersions 2026` |

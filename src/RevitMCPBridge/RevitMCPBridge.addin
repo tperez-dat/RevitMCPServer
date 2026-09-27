@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RevitAddIns>
+
+  <!-- The bridge itself: starts the pipe server and builds the ribbon. -->
   <AddIn Type="Application">
     <Name>Revit MCP Bridge</Name>
     <Assembly>RevitMCPBridge.dll</Assembly>
@@ -8,4 +10,30 @@
     <VendorId>RMCP</VendorId>
     <VendorDescription>Revit MCP Bridge</VendorDescription>
   </AddIn>
+
+  <!--
+    The same two commands registered under Add-Ins > External Tools. This is a fallback: if the
+    ribbon fails to build on some Revit release, writes would otherwise be impossible to enable and
+    the bridge stuck read-only. Having both routes costs nothing.
+  -->
+  <AddIn Type="Command">
+    <Text>Toggle MCP Writes</Text>
+    <Description>Allow or block model changes from the MCP bridge.</Description>
+    <Assembly>RevitMCPBridge.dll</Assembly>
+    <FullClassName>RevitMCPBridge.ToggleWritesCommand</FullClassName>
+    <AddInId>2b6d0f41-8c37-4f2a-9d55-1e8a77c4b902</AddInId>
+    <VendorId>RMCP</VendorId>
+    <VendorDescription>Revit MCP Bridge</VendorDescription>
+  </AddIn>
+
+  <AddIn Type="Command">
+    <Text>MCP Bridge Status</Text>
+    <Description>Show whether the MCP bridge is listening, and where its log is.</Description>
+    <Assembly>RevitMCPBridge.dll</Assembly>
+    <FullClassName>RevitMCPBridge.ShowStatusCommand</FullClassName>
+    <AddInId>5c91a8e3-47b6-4d10-8f22-6a0d3e5b71cc</AddInId>
+    <VendorId>RMCP</VendorId>
+    <VendorDescription>Revit MCP Bridge</VendorDescription>
+  </AddIn>
+
 </RevitAddIns>
