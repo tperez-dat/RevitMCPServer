@@ -41,6 +41,20 @@ in a single transaction named after the command, so one Ctrl+Z in Revit reverses
 | `tools/RevitMCPProbe` | Console checker: runs every read tool against a live model and reports pass/fail |
 | `tests/RevitMCP.Tests` | 55 tests covering framing, paging, the catalogue, the pipe round-trip, and the probe |
 
+## Adding a Revit version later
+
+Support for all three releases is already in the source; a release is skipped only when its SDK is
+absent. To add Revit 2027 to an existing install:
+
+```powershell
+.\build\install-dotnet-sdk.cmd     # .NET 10, per-user, no admin
+.\build\deploy-addin.cmd           # now picks up 2027 as well
+```
+
+Then start Revit 2027 and run `build\run-probe.cmd` against a model in it. The 2027 build is
+compile-verified against the real Revit 2027 API assemblies, but compiling proves the API shape, not
+the behaviour — the probe is what confirms the handlers actually work there.
+
 ## Requirements
 
 | | |
@@ -66,14 +80,17 @@ winget install Microsoft.DotNet.SDK.8
 winget install Microsoft.DotNet.SDK.10   # Revit 2027 only
 ```
 
-`winget` needs administrator rights. Without them, install for your user alone — no admin required:
+`winget` needs administrator rights. Without them, use the bundled installer, which unpacks an SDK
+into your user profile and needs no admin:
 
 ```powershell
-Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File .\dotnet-install.ps1 -Channel 8.0
+.\build\install-dotnet-sdk.cmd                # .NET 10, for Revit 2027
+.\build\install-dotnet-sdk.cmd -Channel 8.0   # .NET 8,  for Revit 2025/2026
 ```
 
-The build scripts find that per-user SDK by themselves, so no PATH changes are needed.
+It wraps Microsoft's official `dotnet-install` script and leaves PATH alone: a machine-wide .NET
+runtime — which Revit installs — sits earlier on PATH and would shadow a per-user SDK anyway, so the
+build scripts locate it directly instead.
 
 Then, from the repo root:
 
