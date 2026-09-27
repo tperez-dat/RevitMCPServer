@@ -1,0 +1,20 @@
+// Example VS Code MCP configuration.
+// Copy to .vscode/mcp.json in your workspace, or merge into your user mcp.json,
+// and change the paths to match your machine.
+{
+  "servers": {
+    "revit": {
+      "type": "stdio",
+      "command": "C:\\dev\\RevitMCPServer\\artifacts\\server-publish\\RevitMCPServer.exe",
+      "env": {
+        // Optional. Only needed if 'python' is not on PATH, or you want a specific
+        // interpreter for EXTRACT_PDF_GEOMETRY (which needs 'pip install pymupdf').
+        "REVIT_MCP_PYTHON": "C:\\Python312\\python.exe"
+
+        // Optional. Only if the bridge session file is not in the default location
+        // (%LOCALAPPDATA%\RevitMCPBridge\session.json).
+        // "REVIT_MCP_SESSION_FILE": "D:\\custom\\session.json"
+      }
+    }
+  }
+}
