@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    One source tree, three Revit releases. Pick the target with -p:RevitVersion=2025|2026|2027
+    (default 2026) or by selecting the matching Visual Studio configuration.
+
+      Revit 2025  -> .NET 8   (net8.0-windows)
+      Revit 2026  -> .NET 8   (net8.0-windows)
+      Revit 2027  -> .NET 10  (net10.0-windows)
+  -->
+  <PropertyGroup>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2026</RevitVersion>
+    <Configurations>Debug;Release;Debug R25;Release R25;Debug R26;Release R26;Debug R27;Release R27</Configurations>
+  </PropertyGroup>
+
+  <!-- Let a Visual Studio configuration name drive the version too. -->
+  <PropertyGroup Condition="$(Configuration.Contains('R25'))"><RevitVersion>2025</RevitVersion></PropertyGroup>
+  <PropertyGroup Condition="$(Configuration.Contains('R26'))"><RevitVersion>2026</RevitVersion></PropertyGroup>
+  <PropertyGroup Condition="$(Configuration.Contains('R27'))"><RevitVersion>2027</RevitVersion></PropertyGroup>
+
+  <PropertyGroup Condition="'$(RevitVersion)' == '2025' Or '$(RevitVersion)' == '2026'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitVersion)' == '2027'">
+    <TargetFramework>net10.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyName>RevitMCPBridge</AssemblyName>
+    <RootNamespace>RevitMCPBridge</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Revit loads the add-in into its own process; nothing here is published standalone. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\bridge\$(RevitVersion)\</OutputPath>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <!-- WPF/WinForms are deliberately unused so the add-in cross-compiles on Linux CI. -->
+    <UseWPF>false</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+  </PropertyGroup>
+
+  <!--
+    Revit API assemblies are reference-only: Revit supplies them at run time, and Autodesk's
+    licence does not permit redistributing them. ExcludeAssets=runtime keeps them out of output.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RevitMCP.Contracts\RevitMCP.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="RevitMCPBridge.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

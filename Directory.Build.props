@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Lets the -windows TFMs build on a non-Windows host (CI / container). -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Company></Company>
+    <Product>RevitMCPServer</Product>
+  </PropertyGroup>
+</Project>
