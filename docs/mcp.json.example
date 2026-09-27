@@ -19,6 +19,16 @@
       "type": "stdio",
 
       // The path build-server.cmd printed. Note the doubled backslashes - JSON needs them.
+      //
+      // If this machine blocks unsigned executables (AppLocker or a Software Restriction
+      // Policy - "This program is blocked by group policy"), launch the DLL through
+      // dotnet.exe instead, which is Microsoft-signed and already permitted:
+      //
+      //   "command": "C:\\Users\\you\\.dotnet\\dotnet.exe",
+      //   "args": ["C:\\dev\\RevitMCPServer\\artifacts\\server-publish\\RevitMCPServer.dll"],
+      //
+      // build-server.cmd detects which of the two works here and prints the right one,
+      // also saving it to artifacts\\server-publish\\mcp.json.
       "command": "C:\\dev\\RevitMCPServer\\artifacts\\server-publish\\RevitMCPServer.exe",
 
       "args": [],
