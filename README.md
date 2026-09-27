@@ -38,7 +38,8 @@ in a single transaction named after the command, so one Ctrl+Z in Revit reverses
 | `src/RevitMCP.Contracts` | Wire protocol: command catalogue, request/response envelope, framing, paging |
 | `src/RevitMCPBridge` | The Revit add-in: pipe server, dispatcher, 41 command handlers |
 | `src/RevitMCPServer` | The MCP server: stdio transport, 42 tool definitions, pipe client |
-| `tests/RevitMCP.Tests` | 52 tests covering framing, paging, the catalogue, and the pipe round-trip |
+| `tools/RevitMCPProbe` | Console checker: runs every read tool against a live model and reports pass/fail |
+| `tests/RevitMCP.Tests` | 55 tests covering framing, paging, the catalogue, the pipe round-trip, and the probe |
 
 ## Requirements
 
@@ -74,6 +75,26 @@ Then, from the repo root:
 # 2. Publish the MCP server
 .\build\build-server.ps1
 ```
+
+## First run, in order
+
+Each step is checkable on its own, so a failure tells you where the problem is. **VS Code is only
+needed at step 5** — you can confirm the bridge works without any MCP client.
+
+1. **Install the add-in.** `.\build\deploy-addin.ps1` (Revit closed).
+2. **Start Revit and open a model.** Look for the **MCP Bridge** ribbon tab. No tab means the add-in
+   did not load — check `%LOCALAPPDATA%\RevitMCPBridge\bridge.log`.
+3. **Click Bridge Status** on that ribbon panel. It should say the bridge is listening. This proves
+   the add-in loaded and the pipe server started, with nothing else involved.
+4. **Run the probe:** `.\build\run-probe.ps1`. It exercises every read-only tool against your open
+   model and prints a pass/skip/fail line for each. This is the step that catches handler bugs, and
+   it needs no MCP client. Add `-Writes` to also run a self-cleaning write check (it creates a level,
+   renames it, and deletes it — enable **Allow MCP Writes** first).
+5. **Publish the server and connect VS Code.** `.\build\build-server.ps1`, then add the entry from
+   `docs/mcp.json.example` to your `.vscode/mcp.json`.
+
+If step 4 is clean, step 5 is only configuration. If step 4 fails, send the failing lines and the
+log rather than debugging MCP config.
 
 If PowerShell refuses to run the scripts (`running scripts is disabled on this system`), which is
 common on a managed laptop, invoke them without changing the machine's policy:
@@ -240,6 +261,9 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
 
 ## Troubleshooting
 
+Run `.\build\run-probe.ps1` first — it names the failing tool, which usually identifies the cause
+faster than reading the table.
+
 | Symptom | Cause |
 | --- | --- |
 | "No Revit bridge session file" | Revit is not running, or the add-in did not load. Check `%LOCALAPPDATA%\RevitMCPBridge\bridge.log` |
@@ -263,7 +287,7 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
 ```bash
 dotnet build                                    # whole solution (defaults to Revit 2026)
 dotnet build src/RevitMCPBridge -p:RevitVersion=2027
-dotnet test                                     # 39 tests, no Revit required
+dotnet test                                     # 55 tests, no Revit required
 ```
 
 The add-in cross-compiles on Linux (`EnableWindowsTargeting`) and the test suite runs there, because

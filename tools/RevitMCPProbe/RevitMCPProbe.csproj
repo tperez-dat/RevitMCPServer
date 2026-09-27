@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>RevitMCPProbe</AssemblyName>
+    <RootNamespace>RevitMCPProbe</RootNamespace>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\probe\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    Logging.Abstractions arrives transitively via RevitMCPServer's MCP SDK reference; pinning it
+    here only creates a downgrade conflict.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\RevitMCP.Contracts\RevitMCP.Contracts.csproj" />
+    <!-- Reuses the real BridgeClient, so the probe exercises the same transport the server uses. -->
+    <ProjectReference Include="..\..\src\RevitMCPServer\RevitMCPServer.csproj" />
+  </ItemGroup>
+
+</Project>

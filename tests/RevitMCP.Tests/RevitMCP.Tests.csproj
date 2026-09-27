@@ -17,6 +17,8 @@
     <ProjectReference Include="..\..\src\RevitMCP.Contracts\RevitMCP.Contracts.csproj" />
     <!-- The server is an Exe; referencing it gives the tests the real BridgeClient. -->
     <ProjectReference Include="..\..\src\RevitMCPServer\RevitMCPServer.csproj" />
+    <!-- So the probe's chaining logic is covered by the suite rather than only by running it. -->
+    <ProjectReference Include="..\..\tools\RevitMCPProbe\RevitMCPProbe.csproj" />
   </ItemGroup>
 
 </Project>
