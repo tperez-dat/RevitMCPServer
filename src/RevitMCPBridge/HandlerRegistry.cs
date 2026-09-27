@@ -12,8 +12,44 @@ public static class HandlerRegistry
     {
         var handlers = new IBridgeCommandHandler[]
         {
+            // bridge-local
             new BridgeStatusHandler(),
+
+            // project / model structure
             new GetProjectInfoHandler(),
+            new ListCategoriesHandler(),
+            new ListLevelsHandler(),
+            new ListPhasesHandler(),
+            new ListWorksetsHandler(),
+            new ListLinkedModelsHandler(),
+
+            // elements
+            new ListElementsHandler(),
+            new CountElementsHandler(),
+            new GetElementPropertiesHandler(),
+            new GetElementTypePropertiesHandler(),
+            new GetElementLocationHandler(),
+            new GetSelectionHandler(),
+            new GetModelWarningsHandler(),
+            new FindByParamHandler(),
+
+            // views / sheets / schedules
+            new GetActiveViewHandler(),
+            new ListViewsHandler(),
+            new ListSheetsHandler(),
+            new GetSheetContentsHandler(),
+            new GetSchedulesHandler(),
+
+            // families / materials
+            new ListFamiliesHandler(),
+            new ListFamilyTypesHandler(),
+            new ListMaterialsHandler(),
+            new GetMaterialPropertiesHandler(),
+
+            // selection / view interaction
+            new SetSelectionHandler(),
+            new OpenViewHandler(),
+            new IsolateInViewHandler(),
         };
 
         AssertCoverage(handlers);
