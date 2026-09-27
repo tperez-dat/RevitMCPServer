@@ -1,15 +1,32 @@
-// Example VS Code MCP configuration.
-// Copy to .vscode/mcp.json in your workspace, or merge into your user mcp.json,
-// and change the paths to match your machine.
+// VS Code MCP configuration for the Revit bridge.
+//
+// Put this in ONE of two places:
+//
+//   Workspace : .vscode\mcp.json in whatever folder you open in VS Code.
+//               Only active in that workspace.
+//
+//   User      : Command Palette (Ctrl+Shift+P) -> "MCP: Open User Configuration".
+//               Available in every workspace, which is usually what you want here,
+//               since the Revit model is not the folder you have open.
+//
+// VS Code uses the key "servers". Claude Desktop and Cursor use "mcpServers" - do not
+// copy a config from those without renaming it, or VS Code will silently ignore it.
+//
+// Comments are fine: VS Code reads this file as JSONC.
 {
   "servers": {
     "revit": {
       "type": "stdio",
+
+      // The path build-server.cmd printed. Note the doubled backslashes - JSON needs them.
       "command": "C:\\dev\\RevitMCPServer\\artifacts\\server-publish\\RevitMCPServer.exe",
+
+      "args": [],
+
       "env": {
-        // Optional. Only needed if 'python' is not on PATH, or you want a specific
-        // interpreter for EXTRACT_PDF_GEOMETRY (which needs 'pip install pymupdf').
-        "REVIT_MCP_PYTHON": "C:\\Python312\\python.exe"
+        // Optional. Only for EXTRACT_PDF_GEOMETRY, and only if "python" is not on PATH
+        // or you want a specific interpreter. That tool also needs "pip install pymupdf".
+        // "REVIT_MCP_PYTHON": "C:\\Python312\\python.exe",
 
         // Optional. Only if the bridge session file is not in the default location
         // (%LOCALAPPDATA%\RevitMCPBridge\session.json).

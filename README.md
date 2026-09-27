@@ -157,7 +157,26 @@ Revit. That rules some clients in and others out:
 | **claude.ai / Claude in the browser** | **No** | Cloud clients reach only remote MCP servers over HTTPS. Making this one reachable would mean exposing your workstation's Revit bridge to the internet — don't |
 | **VIKTOR.AI** | **No** | It is a platform for building engineering web apps, not an MCP client. It could call this server's logic through its own code, but not as MCP |
 
-For VS Code, add to `.vscode/mcp.json` in your workspace (or your user `mcp.json`):
+### VS Code with GitHub Copilot
+
+1. Run `build\build-server.cmd` and note the path it prints, and that its self-test says PASS.
+2. Command Palette (`Ctrl+Shift+P`) → **MCP: Open User Configuration**, and paste the entry from
+   `docs/mcp.json.example` with that path. A user-level config works in every workspace, which suits
+   a Revit model that is not the folder you have open. A workspace `.vscode/mcp.json` works too.
+3. Open Copilot Chat and **switch the mode selector from Ask to Agent**. MCP tools are wired to agent
+   mode only — in Ask mode the tools do not appear however correct the config is. This accounts for
+   most "no tools" reports.
+4. Click **Configure Tools** in the chat input; the 42 Revit tools should be listed and enabled.
+5. Ask it something read-only first, such as "what Revit project is open?", which calls
+   `GET_PROJECT_INFO`.
+
+**MCP: List Servers** shows each server's state and its logs, which is where a startup failure
+surfaces.
+
+Note that VS Code's key is `servers`. Claude Desktop and Cursor use `mcpServers`; a config copied
+from those is ignored without complaint.
+
+The raw entry:
 
 ```jsonc
 {
