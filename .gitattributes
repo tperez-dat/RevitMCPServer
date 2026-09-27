@@ -1,0 +1,22 @@
+# Normalise text by default, letting git decide per platform.
+* text=auto
+
+# Windows scripts must have CRLF endings on checkout. A batch file with bare LF endings can
+# misparse, and these are the files a user runs first — they must not fail for that reason.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# The .addin manifest is read by Revit on Windows.
+*.addin text eol=crlf
+
+# Keep sources and docs LF so they stay diffable from either platform.
+*.cs   text eol=lf
+*.csproj text eol=lf
+*.props  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.py   text eol=lf
+
+# Visual Studio writes CRLF into solution files.
+*.sln  text eol=crlf

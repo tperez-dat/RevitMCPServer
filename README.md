@@ -69,11 +69,11 @@ Then, from the repo root:
 
 ```powershell
 # 1. Build and install the Revit add-in (close Revit first — it locks the assembly)
-.\build\deploy-addin.ps1                    # all three versions
-.\build\deploy-addin.ps1 -RevitVersions 2026 # or just one
+.\build\deploy-addin.cmd                     # all three versions
+.\build\deploy-addin.cmd -RevitVersions 2026  # or just one
 
 # 2. Publish the MCP server
-.\build\build-server.ps1
+.\build\build-server.cmd
 ```
 
 ## First run, in order
@@ -81,27 +81,39 @@ Then, from the repo root:
 Each step is checkable on its own, so a failure tells you where the problem is. **VS Code is only
 needed at step 5** — you can confirm the bridge works without any MCP client.
 
-1. **Install the add-in.** `.\build\deploy-addin.ps1` (Revit closed).
+1. **Install the add-in.** Double-click `build\deploy-addin.cmd`, or from a terminal
+   `.\build\deploy-addin.cmd` (Revit closed).
 2. **Start Revit and open a model.** Look for the **MCP Bridge** ribbon tab. No tab means the add-in
    did not load — check `%LOCALAPPDATA%\RevitMCPBridge\bridge.log`.
 3. **Click Bridge Status** on that ribbon panel. It should say the bridge is listening. This proves
    the add-in loaded and the pipe server started, with nothing else involved.
-4. **Run the probe:** `.\build\run-probe.ps1`. It exercises every read-only tool against your open
+4. **Run the probe:** `build\run-probe.cmd`. It exercises every read-only tool against your open
    model and prints a pass/skip/fail line for each. This is the step that catches handler bugs, and
    it needs no MCP client. Add `-Writes` to also run a self-cleaning write check (it creates a level,
    renames it, and deletes it — enable **Allow MCP Writes** first).
-5. **Publish the server and connect VS Code.** `.\build\build-server.ps1`, then add the entry from
+5. **Publish the server and connect VS Code.** `build\build-server.cmd`, then add the entry from
    `docs/mcp.json.example` to your `.vscode/mcp.json`.
 
 If step 4 is clean, step 5 is only configuration. If step 4 fails, send the failing lines and the
 log rather than debugging MCP config.
 
-If PowerShell refuses to run the scripts (`running scripts is disabled on this system`), which is
-common on a managed laptop, invoke them without changing the machine's policy:
+### The .cmd wrappers, and why they exist
+
+Each script comes in two forms: `deploy-addin.ps1` and `deploy-addin.cmd`. **Use the `.cmd`** unless
+you have a reason not to. On a managed laptop PowerShell usually refuses to run a downloaded `.ps1`
+(`running scripts is disabled on this system`); the `.cmd` invokes PowerShell with
+`-ExecutionPolicy Bypass` for that one call, so the restriction never comes up and **nothing about the
+machine's settings is changed**. The `.cmd` files also work double-clicked from Explorer, and keep the
+window open so you can read the result.
+
+If you would rather run the `.ps1` directly and hit that refusal:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build\deploy-addin.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build\deploy-addin.ps1
 ```
+
+Note that PowerShell requires the `.\` prefix to run a script in the current directory — plain
+`deploy-addin.ps1` will not work, by design.
 
 `RevitMCPServer.sln` opens in Visual Studio 2022 or later if you would rather build there — note that
 the Revit 2027 target needs the .NET 10 SDK, so VS 2022 can build the 2025 and 2026 configurations
