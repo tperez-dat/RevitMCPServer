@@ -328,6 +328,8 @@ faster than reading the table.
 | `dotnet --list-sdks` prints nothing at all | A runtime-only `dotnet` is winning on PATH. Revit installs the .NET runtime machine-wide, and system PATH entries beat user ones, so it shadows a per-user SDK install. The build scripts detect this and pick a working SDK themselves; to fix your shell, run `$env:Path = "$env:USERPROFILE\.dotnet;$env:Path"` |
 | "No .NET SDK was found" from a build script | Genuinely no SDK. Install one for your user only, no admin needed — the error text gives the two commands |
 | `NETSDK1045: does not support targeting .NET 10.0` | Building the Revit 2027 configuration without the .NET 10 SDK. Install it, or build only the versions you have: `deploy-addin.cmd -RevitVersions 2026` |
+| `RevitMCPServer.exe ... blocked by group policy` | AppLocker or a Software Restriction Policy is blocking unsigned executables. `build-server.cmd` detects this and falls back to launching the DLL through `dotnet.exe`, which is Microsoft-signed and already permitted. Use the config it prints — no admin rights needed |
+| MCP server configured but no tools in Copilot | Copilot Chat is in Ask mode. MCP tools only work in **Agent** mode — switch the mode selector. Check **MCP: List Servers** for startup errors |
 | Tools missing in VS Code | The server could not start. Its logs go to stderr; check the MCP output panel |
 
 ## Licensing
