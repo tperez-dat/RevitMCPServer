@@ -102,11 +102,22 @@ needed at step 5** — you can confirm the bridge works without any MCP client.
    model and prints a pass/skip/fail line for each. This is the step that catches handler bugs, and
    it needs no MCP client. Add `-Writes` to also run a self-cleaning write check (it creates a level,
    renames it, and deletes it — enable **Allow MCP Writes** first).
-5. **Publish the server and connect VS Code.** `build\build-server.cmd`, then add the entry from
-   `docs/mcp.json.example` to your `.vscode/mcp.json`.
+5. **Publish the server.** `build\build-server.cmd`. It publishes `RevitMCPServer.exe` and then
+   runs its self-test, which reports the tools it registered and whether it can reach Revit. Do not
+   move on until that says PASS (or PARTIAL with Revit closed).
+6. **Connect a client.** Add the entry from `docs/mcp.json.example` to your `.vscode/mcp.json`.
 
-If step 4 is clean, step 5 is only configuration. If step 4 fails, send the failing lines and the
-log rather than debugging MCP config.
+You can re-run the self-test at any time:
+
+```powershell
+artifacts\server-publish\RevitMCPServer.exe --selftest
+```
+
+It splits "the server is broken" from "the client is misconfigured", which a client showing an empty
+tool list cannot.
+
+If steps 4 and 5 are clean, step 6 is only configuration. If either fails, send the failing lines and
+the log rather than debugging MCP config.
 
 ### The .cmd wrappers, and why they exist
 
@@ -141,7 +152,7 @@ Revit. That rules some clients in and others out:
 
 | Client | Works | Why |
 | --- | --- | --- |
-| **VS Code** (Copilot agent mode, or the Claude Code extension) | Yes | Launches a local stdio MCP server |
+| **VS Code** (Copilot agent mode, or the Claude Code extension) | Yes | Launches a local stdio MCP server. VS Code itself is not an MCP client — the extension is, so you need one of these |
 | Claude Desktop | Yes | Same, if you are permitted to install it |
 | **claude.ai / Claude in the browser** | **No** | Cloud clients reach only remote MCP servers over HTTPS. Making this one reachable would mean exposing your workstation's Revit bridge to the internet — don't |
 | **VIKTOR.AI** | **No** | It is a platform for building engineering web apps, not an MCP client. It could call this server's logic through its own code, but not as MCP |
