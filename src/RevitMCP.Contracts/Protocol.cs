@@ -120,7 +120,14 @@ public sealed class BridgeSessionFile
     public string RevitVersion { get; set; } = "";
     public DateTimeOffset StartedUtc { get; set; }
 
-    public static string DefaultPath => System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "RevitMCPBridge", "session.json");
+    /// <summary>
+    /// Where the handshake file lives. REVIT_MCP_SESSION_FILE overrides it, which allows a
+    /// non-standard install and keeps tests from touching a developer's live session file.
+    /// </summary>
+    public static string DefaultPath =>
+        Environment.GetEnvironmentVariable("REVIT_MCP_SESSION_FILE") is { Length: > 0 } configured
+            ? configured
+            : System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RevitMCPBridge", "session.json");
 }

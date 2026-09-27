@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- net8.0 keeps the server runnable on the widest set of workstations. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>RevitMCPServer</AssemblyName>
+    <RootNamespace>RevitMCPServer</RootNamespace>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\server\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RevitMCP.Contracts\RevitMCP.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="scripts\extract_pdf_geometry.py" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
