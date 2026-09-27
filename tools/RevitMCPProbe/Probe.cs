@@ -91,9 +91,22 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         var categories = await CheckAsync(Commands.ListCategories,
             Args(("limit", 60), ("nonEmptyOnly", true), ("includeCounts", true)), ct);
 
-        var categoryName = categories.Arr("categories")
-            .FirstOrDefault(c => c?["elementCount"]?.GetValue<int>() > 0)
-            ?["name"]?.GetValue<string>();
+        var populated = categories.Arr("categories")
+            .Where(c => c?["elementCount"]?.GetValue<int>() > 0)
+            .Select(c => c?["name"]?.GetValue<string>())
+            .Where(name => !string.IsNullOrEmpty(name))
+            .ToList();
+
+        // Prefer a category whose elements have types and geometry. Alphabetical order would pick
+        // Areas, which is typeless, so the type and location checks would prove much less.
+        string?[] preferred =
+        [
+            "Walls", "Floors", "Doors", "Windows", "Structural Framing",
+            "Structural Columns", "Roofs", "Ceilings", "Furniture"
+        ];
+
+        var categoryName = preferred.FirstOrDefault(populated.Contains)
+                           ?? populated.FirstOrDefault();
 
         if (categoryName is null)
         {

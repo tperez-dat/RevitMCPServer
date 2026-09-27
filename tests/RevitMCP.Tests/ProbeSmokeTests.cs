@@ -30,11 +30,15 @@ public class ProbeSmokeTests
 
         Commands.ListCategories => Ok(request, new JsonObject
         {
-            ["count"] = 1,
-            ["totalMatched"] = 1,
+            ["count"] = 3,
+            ["totalMatched"] = 3,
             ["categories"] = new JsonArray
             {
-                new JsonObject { ["id"] = -2000011, ["name"] = "Walls", ["elementCount"] = 7 }
+                // Areas sorts first and is typeless, exactly as in a real model. The probe should
+                // look past it to a category whose elements have types and geometry.
+                new JsonObject { ["id"] = -2000080, ["name"] = "Areas", ["elementCount"] = 12 },
+                new JsonObject { ["id"] = -2000011, ["name"] = "Walls", ["elementCount"] = 7 },
+                new JsonObject { ["id"] = -2000023, ["name"] = "Floors", ["elementCount"] = 3 }
             }
         }),
 
@@ -134,6 +138,28 @@ public class ProbeSmokeTests
 
         var missed = expected.Except(seen).ToList();
         Assert.True(missed.Count == 0, $"Probe never exercised: {string.Join(", ", missed)}");
+    }
+
+    [Fact]
+    public async Task ProbePrefersACategoryWhoseElementsHaveTypes()
+    {
+        string? requestedCategory = null;
+
+        await using var bridge = new FakeBridge(request =>
+        {
+            if (request.Command == Commands.ListElements)
+                requestedCategory ??= request.Args?["category"]?.GetValue<string>();
+            return StubHandler(request);
+        });
+
+        await using var client = new RevitMCPServer.BridgeClient(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RevitMCPServer.BridgeClient>.Instance);
+
+        await new RevitMCPProbe.Probe(client, verbose: false).RunReadChecksAsync(default);
+
+        // Areas sorts first but is typeless, so following it would prove little about the
+        // type and location handlers.
+        Assert.Equal("Walls", requestedCategory);
     }
 
     [Fact]

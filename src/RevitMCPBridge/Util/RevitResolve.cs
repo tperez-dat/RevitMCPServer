@@ -41,7 +41,13 @@ public static class RevitResolve
         }
 
         // Fall back to the active view's level, which is what a user means by "on this floor".
-        var viewLevel = doc.ActiveView?.GenLevel;
+        // GenLevel is not defined for every view type, so a schedule or sheet being active must not
+        // break creation - fall through to the lowest level instead.
+        Level? viewLevel = null;
+        try { viewLevel = doc.ActiveView?.GenLevel; }
+        catch (Autodesk.Revit.Exceptions.ApplicationException) { /* view has no level */ }
+        catch (InvalidOperationException) { /* view has no level */ }
+
         if (viewLevel is not null) return viewLevel;
 
         var lowest = Levels(doc).OrderBy(l => l.Elevation).FirstOrDefault();

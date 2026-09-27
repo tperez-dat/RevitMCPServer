@@ -17,10 +17,10 @@ public sealed class GetActiveViewHandler : IBridgeCommandHandler
 
         var result = ViewJson.Describe(view);
         result["isTemplate"] = view.IsTemplate;
-        result["scale"] = view.Scale;
-        result["detailLevel"] = view.DetailLevel.ToString();
-        result["discipline"] = view.Discipline.ToString();
-        result["cropBoxActive"] = view.CropBoxActive;
+        result["scale"] = ViewJson.Scale(view);
+        result["detailLevel"] = ViewJson.DetailLevel(view);
+        result["discipline"] = ViewJson.Discipline(view);
+        result["cropBoxActive"] = ViewJson.CropBoxActive(view);
 
         // Which sheet the view sits on, when it is placed — the usual follow-up question.
         result["sheet"] = ViewJson.SheetForView(doc, view);
@@ -69,7 +69,7 @@ public sealed class ListViewsHandler : IBridgeCommandHandler
         {
             var row = ViewJson.Describe(view);
             row["isTemplate"] = view.IsTemplate;
-            row["scale"] = view.Scale;
+            row["scale"] = ViewJson.Scale(view);
             return (JsonNode?)row;
         });
 
@@ -284,13 +284,38 @@ public sealed class GetSchedulesHandler : IBridgeCommandHandler
 /// <summary>Shared view serialisation, so a view looks the same whichever command returned it.</summary>
 internal static class ViewJson
 {
+    /// <summary>
+    /// Several View properties are only defined for some view types and throw an
+    /// Autodesk.Revit.Exceptions.InvalidOperationException otherwise - Discipline and Scale are not
+    /// meaningful on a schedule, a sheet or a legend, for instance. There is no API to ask in
+    /// advance whether a given view supports one, so each read is attempted and a null reported
+    /// when it is not available. Returning null says "this view has no such property", which is the
+    /// truth, rather than failing a whole query over one field.
+    /// </summary>
+    private static T? Optional<T>(Func<T> read) where T : struct
+    {
+        try { return read(); }
+        catch (Autodesk.Revit.Exceptions.ApplicationException) { return null; }
+        catch (InvalidOperationException) { return null; }
+    }
+
+    public static int? Scale(View view) => Optional(() => view.Scale);
+
+    public static string? DetailLevel(View view) => Optional(() => view.DetailLevel)?.ToString();
+
+    public static string? Discipline(View view) => Optional(() => view.Discipline)?.ToString();
+
+    public static bool? CropBoxActive(View view) => Optional(() => view.CropBoxActive);
+
+    public static bool? CanBePrinted(View view) => Optional(() => view.CanBePrinted);
+
     public static JsonObject Describe(View view) => new()
     {
         ["id"] = view.Id.Value,
         ["name"] = Json.SafeName(view),
         ["viewType"] = view.ViewType.ToString(),
         ["class"] = view.GetType().Name,
-        ["canBePrinted"] = view.CanBePrinted
+        ["canBePrinted"] = CanBePrinted(view)
     };
 
     /// <summary>The sheet a view is placed on, or null when it is not placed.</summary>
