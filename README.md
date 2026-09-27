@@ -53,6 +53,19 @@ The Revit API assemblies come from reference-only NuGet packages, so you do not 
 
 ## Build and install
 
+Build on the Windows machine that has Revit. Compiling does not need Revit installed (the API comes
+from reference packages), but the output has to land in that machine's Revit Addins folder, and
+Revit is Windows-only.
+
+Install the SDKs first — **.NET 8** for Revit 2025/2026, and **.NET 10** as well if you want 2027:
+
+```powershell
+winget install Microsoft.DotNet.SDK.8
+winget install Microsoft.DotNet.SDK.10
+```
+
+Then, from the repo root:
+
 ```powershell
 # 1. Build and install the Revit add-in (close Revit first — it locks the assembly)
 .\build\deploy-addin.ps1                    # all three versions
@@ -61,6 +74,17 @@ The Revit API assemblies come from reference-only NuGet packages, so you do not 
 # 2. Publish the MCP server
 .\build\build-server.ps1
 ```
+
+If PowerShell refuses to run the scripts (`running scripts is disabled on this system`), which is
+common on a managed laptop, invoke them without changing the machine's policy:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build\deploy-addin.ps1
+```
+
+`RevitMCPServer.sln` opens in Visual Studio 2022 or later if you would rather build there — note that
+the Revit 2027 target needs the .NET 10 SDK, so VS 2022 can build the 2025 and 2026 configurations
+but not 2027. The CLI handles all three.
 
 Start Revit. You should see an **MCP Bridge** ribbon tab with two buttons: **Allow MCP Writes** and
 **Bridge Status**. The add-in writes a session file with a fresh token to
