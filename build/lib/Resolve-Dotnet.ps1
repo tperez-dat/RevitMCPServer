@@ -70,6 +70,38 @@ function Resolve-DotnetPath {
     throw $message.ToString()
 }
 
+function Get-DotnetSdkMajor {
+    <# The major versions available, e.g. @(8, 10). Used to skip a Revit release whose SDK is absent
+       rather than failing the whole install for it. #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [string] $DotnetPath)
+
+    $sdks = & $DotnetPath --list-sdks 2>$null
+    $majors = foreach ($line in $sdks) {
+        if ($line -match '^\s*(\d+)\.') { [int]$Matches[1] }
+    }
+
+    return @($majors | Sort-Object -Unique)
+}
+
+function Get-InstalledRevitVersion {
+    <# Revit releases present on this machine, newest first. Building for a Revit that is not
+       installed wastes time and produces output nobody will load. #>
+    [CmdletBinding()]
+    param([string[]] $Supported = @('2025', '2026', '2027'))
+
+    # Absent off Windows, and conceivably redirected on it.
+    $programFiles = ${env:ProgramFiles}
+    if ([string]::IsNullOrWhiteSpace($programFiles)) { return @() }
+
+    $found = foreach ($version in $Supported) {
+        $exe = Join-Path $programFiles "Autodesk\Revit $version\Revit.exe"
+        if (Test-Path -LiteralPath $exe -PathType Leaf) { $version }
+    }
+
+    return @($found)
+}
+
 function Get-DotnetSdkSummary {
     [CmdletBinding()]
     param([Parameter(Mandatory)] [string] $DotnetPath)

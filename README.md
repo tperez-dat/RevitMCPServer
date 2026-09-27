@@ -46,7 +46,7 @@ in a single transaction named after the command, so one Ctrl+Z in Revit reverses
 | | |
 | --- | --- |
 | Revit | 2025, 2026, or 2027 (Windows only) |
-| .NET SDK | **8** for Revit 2025/2026, **10** for Revit 2027 — Revit 2027 moved to .NET 10 |
+| .NET SDK | **8** for Revit 2025/2026, **10** for Revit 2027 — Revit 2027 moved to .NET 10. Only the SDK for the Revit versions you actually use is needed; the installer skips the rest |
 | Python | 3.9+ with `pymupdf`, only for `EXTRACT_PDF_GEOMETRY` |
 
 The Revit API assemblies come from reference-only NuGet packages, so you do not need to copy
@@ -58,12 +58,22 @@ Build on the Windows machine that has Revit. Compiling does not need Revit insta
 from reference packages), but the output has to land in that machine's Revit Addins folder, and
 Revit is Windows-only.
 
-Install the SDKs first — **.NET 8** for Revit 2025/2026, and **.NET 10** as well if you want 2027:
+Install the SDKs first — **.NET 8** for Revit 2025/2026, and **.NET 10** as well only if you have
+Revit 2027:
 
 ```powershell
 winget install Microsoft.DotNet.SDK.8
-winget install Microsoft.DotNet.SDK.10
+winget install Microsoft.DotNet.SDK.10   # Revit 2027 only
 ```
+
+`winget` needs administrator rights. Without them, install for your user alone — no admin required:
+
+```powershell
+Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\dotnet-install.ps1 -Channel 8.0
+```
+
+The build scripts find that per-user SDK by themselves, so no PATH changes are needed.
 
 Then, from the repo root:
 
@@ -82,7 +92,8 @@ Each step is checkable on its own, so a failure tells you where the problem is. 
 needed at step 5** — you can confirm the bridge works without any MCP client.
 
 1. **Install the add-in.** Double-click `build\deploy-addin.cmd`, or from a terminal
-   `.\build\deploy-addin.cmd` (Revit closed).
+   `.\build\deploy-addin.cmd` (Revit closed). It detects which Revit releases are installed and
+   builds for those, skipping any whose SDK is missing rather than failing the whole run.
 2. **Start Revit and open a model.** Look for the **MCP Bridge** ribbon tab. No tab means the add-in
    did not load — check `%LOCALAPPDATA%\RevitMCPBridge\bridge.log`.
 3. **Click Bridge Status** on that ribbon panel. It should say the bridge is listening. This proves
@@ -285,6 +296,7 @@ faster than reading the table.
 | No **MCP Bridge** ribbon tab | The add-in failed to load. The log and the Revit add-in error dialog say why |
 | `dotnet --list-sdks` prints nothing at all | A runtime-only `dotnet` is winning on PATH. Revit installs the .NET runtime machine-wide, and system PATH entries beat user ones, so it shadows a per-user SDK install. The build scripts detect this and pick a working SDK themselves; to fix your shell, run `$env:Path = "$env:USERPROFILE\.dotnet;$env:Path"` |
 | "No .NET SDK was found" from a build script | Genuinely no SDK. Install one for your user only, no admin needed — the error text gives the two commands |
+| `NETSDK1045: does not support targeting .NET 10.0` | Building the Revit 2027 configuration without the .NET 10 SDK. Install it, or build only the versions you have: `deploy-addin.cmd -RevitVersions 2026` |
 | Tools missing in VS Code | The server could not start. Its logs go to stderr; check the MCP output panel |
 
 ## Licensing

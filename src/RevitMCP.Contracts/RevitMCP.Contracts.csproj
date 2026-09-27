@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <!--
+      net8.0 only, deliberately. .NET 10 projects consume a .NET 8 library without trouble, so the
+      Revit 2027 bridge (net10.0-windows) still references this happily. Multi-targeting net10.0 as
+      well would force the .NET 10 SDK onto anyone building ANY configuration, including the Revit
+      2025 and 2026 ones that only need SDK 8 - and the per-user SDK install available on a locked
+      down machine is usually just the one.
+    -->
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>RevitMCP.Contracts</RootNamespace>
   </PropertyGroup>
 </Project>
