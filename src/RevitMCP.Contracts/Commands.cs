@@ -45,6 +45,19 @@ public static class Commands
     public const string CreateFloor = "CREATE_FLOOR";
     public const string CreateDraftDetail = "CREATE_DRAFT_DETAIL";
 
+    // --- editing ---
+    public const string SetElementParameter = "SET_ELEMENT_PARAMETER";
+    public const string DeleteElement = "DELETE_ELEMENT";
+
+    // --- project setup ---
+    public const string CreateLevel = "CREATE_LEVEL";
+    public const string CreateSheet = "CREATE_SHEET";
+    public const string PlaceViewOnSheet = "PLACE_VIEW_ON_SHEET";
+
+    // --- document operations ---
+    public const string SaveModel = "SAVE_MODEL";
+    public const string SyncWithCentral = "SYNC_WITH_CENTRAL";
+
     // --- export / integration ---
     public const string ExportScheduleToCsv = "EXPORT_SCHEDULE_TO_CSV";
     public const string ExtractPdfGeometry = "EXTRACT_PDF_GEOMETRY";
@@ -61,6 +74,12 @@ public enum CommandKind
     UiWrite,
     /// <summary>Changes the model inside a transaction. Requires write opt-in.</summary>
     ModelWrite,
+    /// <summary>
+    /// Changes the document at file level rather than its contents: saving, synchronising with
+    /// central. Requires write opt-in, and runs outside a transaction — Revit refuses a save while
+    /// one is open.
+    /// </summary>
+    DocumentWrite,
     /// <summary>
     /// Handled entirely in the MCP server process and never sent over the pipe. Used for work that
     /// needs nothing from Revit, so it stays out of Revit's process.
@@ -113,6 +132,15 @@ public static class CommandCatalog
         new(Commands.CreateFloor, CommandKind.ModelWrite, "Create a floor from a boundary polygon."),
         new(Commands.CreateDraftDetail, CommandKind.ModelWrite, "Create detail elements in a view."),
 
+        new(Commands.SetElementParameter, CommandKind.ModelWrite, "Set a parameter value on one or more elements."),
+        new(Commands.DeleteElement, CommandKind.ModelWrite, "Delete elements, reporting what else went with them."),
+        new(Commands.CreateLevel, CommandKind.ModelWrite, "Create a level, optionally with a floor plan."),
+        new(Commands.CreateSheet, CommandKind.ModelWrite, "Create a sheet, optionally with a titleblock."),
+        new(Commands.PlaceViewOnSheet, CommandKind.ModelWrite, "Place a view or schedule on a sheet."),
+
+        new(Commands.SaveModel, CommandKind.DocumentWrite, "Save the active document."),
+        new(Commands.SyncWithCentral, CommandKind.DocumentWrite, "Synchronise a workshared model with central."),
+
         new(Commands.ExportScheduleToCsv, CommandKind.Read, "Export a named schedule to CSV."),
         new(Commands.ExtractPdfGeometry, CommandKind.ServerLocal, "Extract geometry from a PDF (runs in the MCP server; no Revit involvement)."),
     };
@@ -123,7 +151,8 @@ public static class CommandCatalog
     public static bool TryGet(string name, out CommandSpec spec) => ByName.TryGetValue(name, out spec!);
 
     public static bool RequiresWriteConsent(string name) =>
-        TryGet(name, out var s) && s.Kind is CommandKind.UiWrite or CommandKind.ModelWrite;
+        TryGet(name, out var s)
+        && s.Kind is CommandKind.UiWrite or CommandKind.ModelWrite or CommandKind.DocumentWrite;
 
     /// <summary>Commands the Revit add-in is expected to implement.</summary>
     public static IEnumerable<CommandSpec> BridgeCommands =>

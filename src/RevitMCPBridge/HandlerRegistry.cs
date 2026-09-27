@@ -59,6 +59,19 @@ public static class HandlerRegistry
             new CreateFloorHandler(),
             new CreateDraftDetailHandler(),
 
+            // editing
+            new SetElementParameterHandler(),
+            new DeleteElementHandler(),
+
+            // project setup
+            new CreateLevelHandler(),
+            new CreateSheetHandler(),
+            new PlaceViewOnSheetHandler(),
+
+            // document operations
+            new SaveModelHandler(),
+            new SyncWithCentralHandler(),
+
             // export
             new ExportScheduleToCsvHandler(),
         };

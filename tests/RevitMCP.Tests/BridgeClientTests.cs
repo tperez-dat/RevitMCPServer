@@ -152,3 +152,87 @@ public class BridgeClientTests
 /// <summary>Keeps pipe tests off the same environment variable at the same time.</summary>
 [CollectionDefinition("pipe", DisableParallelization = true)]
 public class PipeCollection;
+
+/// <summary>
+/// SET_ELEMENT_PARAMETER decides between display units and raw internal units from the JSON value's
+/// kind, so a number must not arrive as a string. These pin that down on the wire.
+/// </summary>
+[Collection("pipe")]
+public class ParameterPayloadTests
+{
+    private static RevitMCPServer.BridgeClient NewClient() =>
+        new(Microsoft.Extensions.Logging.Abstractions.NullLogger<RevitMCPServer.BridgeClient>.Instance);
+
+    [Fact]
+    public async Task SendsARawValueAsAJsonNumber()
+    {
+        JsonNode? seen = null;
+
+        await using var bridge = new FakeBridge(request =>
+        {
+            seen = request.Args!["value"];
+            return BridgeResponse.Success(request, new JsonObject());
+        });
+        await using var client = NewClient();
+
+        var args = new JsonObject
+        {
+            ["elementIds"] = new JsonArray { 1L },
+            ["parameterName"] = "Unconnected Height",
+            ["value"] = JsonValue.Create(8.5)
+        };
+
+        await client.CallAsync(Commands.SetElementParameter, args, 10_000, default);
+
+        Assert.NotNull(seen);
+        Assert.Equal(System.Text.Json.JsonValueKind.Number, seen!.GetValueKind());
+        Assert.Equal(8.5, seen.GetValue<double>());
+    }
+
+    [Fact]
+    public async Task SendsATextValueAsAJsonString()
+    {
+        JsonNode? seen = null;
+
+        await using var bridge = new FakeBridge(request =>
+        {
+            seen = request.Args!["value"];
+            return BridgeResponse.Success(request, new JsonObject());
+        });
+        await using var client = NewClient();
+
+        var args = new JsonObject
+        {
+            ["elementIds"] = new JsonArray { 1L },
+            ["parameterName"] = "Unconnected Height",
+            ["value"] = JsonValue.Create("8' 6\"")
+        };
+
+        await client.CallAsync(Commands.SetElementParameter, args, 10_000, default);
+
+        Assert.NotNull(seen);
+        Assert.Equal(System.Text.Json.JsonValueKind.String, seen!.GetValueKind());
+        Assert.Equal("8' 6\"", seen.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task PreservesElementIdsAsNumbersNotStrings()
+    {
+        JsonArray? seen = null;
+
+        await using var bridge = new FakeBridge(request =>
+        {
+            seen = request.Args!["elementIds"] as JsonArray;
+            return BridgeResponse.Success(request, new JsonObject());
+        });
+        await using var client = NewClient();
+
+        var args = new JsonObject { ["elementIds"] = new JsonArray { 12345L, 67890L } };
+        await client.CallAsync(Commands.DeleteElement, args, 10_000, default);
+
+        Assert.NotNull(seen);
+        Assert.Equal(2, seen!.Count);
+        Assert.Equal(12345L, seen[0]!.GetValue<long>());
+        Assert.Equal(67890L, seen[1]!.GetValue<long>());
+    }
+}

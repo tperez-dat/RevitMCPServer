@@ -128,7 +128,7 @@ public sealed class RevitCommandDispatcher : IExternalEventHandler
                 $"'{request.Command}' is not a bridge command.", null, stopwatch);
         }
 
-        if (spec.Kind is CommandKind.UiWrite or CommandKind.ModelWrite && !WriteConsent.Enabled)
+        if (CommandCatalog.RequiresWriteConsent(request.Command) && !WriteConsent.Enabled)
         {
             return Failed(request, BridgeErrorCode.WriteNotPermitted,
                 $"'{request.Command}' changes the model or the UI, and write mode is off. " +

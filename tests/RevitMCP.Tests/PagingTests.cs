@@ -75,8 +75,41 @@ public class CommandCatalogTests
     [InlineData(Commands.ListElements, false)]
     [InlineData(Commands.BridgeStatus, false)]
     [InlineData(Commands.ExportScheduleToCsv, false)]
+    [InlineData(Commands.SetElementParameter, true)]
+    [InlineData(Commands.DeleteElement, true)]
+    [InlineData(Commands.CreateLevel, true)]
+    [InlineData(Commands.CreateSheet, true)]
+    [InlineData(Commands.PlaceViewOnSheet, true)]
+    [InlineData(Commands.SaveModel, true)]
+    [InlineData(Commands.SyncWithCentral, true)]
+    [InlineData(Commands.ExtractPdfGeometry, false)]
     public void GatesExactlyTheCommandsThatChangeSomething(string command, bool expected) =>
         Assert.Equal(expected, CommandCatalog.RequiresWriteConsent(command));
+
+    [Fact]
+    public void GatesEveryCommandThatIsNotAReadOrALocalHelper()
+    {
+        // Guards against a new write command being added without consent gating, which would make it
+        // callable by any local process the moment the bridge is listening.
+        foreach (var spec in CommandCatalog.All)
+        {
+            var shouldBeGated = spec.Kind
+                is CommandKind.UiWrite or CommandKind.ModelWrite or CommandKind.DocumentWrite;
+
+            Assert.Equal(shouldBeGated, CommandCatalog.RequiresWriteConsent(spec.Name));
+        }
+    }
+
+    [Fact]
+    public void RunsSaveAndSyncOutsideATransaction()
+    {
+        // Revit refuses a save while a transaction is open, so these must not be ModelWrite.
+        foreach (var name in new[] { Commands.SaveModel, Commands.SyncWithCentral })
+        {
+            Assert.True(CommandCatalog.TryGet(name, out var spec));
+            Assert.Equal(CommandKind.DocumentWrite, spec.Kind);
+        }
+    }
 
     [Fact]
     public void LooksUpCommandsCaseInsensitively()

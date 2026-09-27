@@ -2,8 +2,9 @@
 
 An MCP server that lets an AI assistant read and modify an open Autodesk Revit model.
 
-It exposes **35 tools** over the Model Context Protocol: 24 read/query tools, 3 selection and view
-interaction tools, 6 modelling tools, and 2 export/integration tools.
+It exposes **42 tools** over the Model Context Protocol: 24 read/query tools, 3 selection and view
+interaction tools, 11 modelling and editing tools, 2 document operations, and 2 export/integration
+tools.
 
 Supports **Revit 2025, 2026 and 2027**. Writes are off until you enable them in Revit.
 
@@ -35,9 +36,9 @@ in a single transaction named after the command, so one Ctrl+Z in Revit reverses
 | Project | What it is |
 | --- | --- |
 | `src/RevitMCP.Contracts` | Wire protocol: command catalogue, request/response envelope, framing, paging |
-| `src/RevitMCPBridge` | The Revit add-in: pipe server, dispatcher, 34 command handlers |
-| `src/RevitMCPServer` | The MCP server: stdio transport, 35 tool definitions, pipe client |
-| `tests/RevitMCP.Tests` | 39 tests covering framing, paging, the catalogue, and the pipe round-trip |
+| `src/RevitMCPBridge` | The Revit add-in: pipe server, dispatcher, 41 command handlers |
+| `src/RevitMCPServer` | The MCP server: stdio transport, 42 tool definitions, pipe client |
+| `tests/RevitMCP.Tests` | 52 tests covering framing, paging, the catalogue, and the pipe round-trip |
 
 ## Requirements
 
@@ -167,6 +168,23 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
 | `CREATE_STRUCTURAL_FRAMING` | A beam between two points |
 | `CREATE_FLOOR` | A floor from a boundary polygon |
 | `CREATE_DRAFT_DETAIL` | Detail lines, arcs, circles, text, filled regions and detail components, from a JSON payload |
+| `CREATE_LEVEL` | A level, optionally with a matching floor plan |
+| `CREATE_SHEET` | A sheet, with a titleblock or as a placeholder |
+| `PLACE_VIEW_ON_SHEET` | A view or schedule placed on a sheet |
+
+### Editing — *requires write mode*
+
+| Tool | Does |
+| --- | --- |
+| `SET_ELEMENT_PARAMETER` | Sets one parameter on one or more elements, reporting the value Revit actually stored |
+| `DELETE_ELEMENT` | Deletes elements, reporting the full cascade. `dryRun` shows the blast radius first |
+
+### Document operations — *requires write mode*
+
+| Tool | Does |
+| --- | --- |
+| `SAVE_MODEL` | Saves in place. Never does a Save As |
+| `SYNC_WITH_CENTRAL` | Synchronises a workshared model, relinquishing borrowed elements by default |
 
 ### Export / integration
 
@@ -187,6 +205,14 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
   plan, a section or a drafting view. Pass `coordinateSpace: "model"` for raw model coordinates.
 - **A full circle is two arcs.** Revit has no closed arc curve, so `circle` returns two ids.
 - **`EXTRACT_PDF_GEOMETRY` returns PDF points** (72/inch). Divide by 864 for feet.
+- **`SET_ELEMENT_PARAMETER` has two value forms.** `value` is text and goes through Revit's own
+  parser, so it honours display units — `"8' 6\""` works. `rawValue` is a number in raw internal
+  units (feet, radians). Give exactly one. For Yes/No parameters, `rawValue: 1` or `0` is reliable.
+  To change a **type** parameter, pass the type's id — which affects every instance of that type.
+- **`DELETE_ELEMENT` cascades.** Deleting a wall deletes its hosted doors and windows. Call it with
+  `dryRun: true` first to see the dependents; the response always lists every id actually removed.
+- **`SAVE_MODEL` and `SYNC_WITH_CENTRAL` run outside a transaction**, because Revit refuses a save
+  while one is open. On a workshared model, `SAVE_MODEL` writes the local file only.
 
 ## Troubleshooting
 
