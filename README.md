@@ -283,6 +283,8 @@ faster than reading the table.
 | "Revit did not reach an API context" | Revit is showing a modal dialog or running a long command. Dismiss it and retry |
 | "Timed out connecting to the pipe" | Revit closed, or another client holds the single allowed connection |
 | No **MCP Bridge** ribbon tab | The add-in failed to load. The log and the Revit add-in error dialog say why |
+| `dotnet --list-sdks` prints nothing at all | A runtime-only `dotnet` is winning on PATH. Revit installs the .NET runtime machine-wide, and system PATH entries beat user ones, so it shadows a per-user SDK install. The build scripts detect this and pick a working SDK themselves; to fix your shell, run `$env:Path = "$env:USERPROFILE\.dotnet;$env:Path"` |
+| "No .NET SDK was found" from a build script | Genuinely no SDK. Install one for your user only, no admin needed — the error text gives the two commands |
 | Tools missing in VS Code | The server could not start. Its logs go to stderr; check the MCP output panel |
 
 ## Licensing

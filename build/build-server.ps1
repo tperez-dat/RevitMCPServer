@@ -13,11 +13,15 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+. (Join-Path $PSScriptRoot 'lib\Resolve-Dotnet.ps1')
+$dotnet = Resolve-DotnetPath
+Write-Host "dotnet : $dotnet  (SDKs: $(Get-DotnetSdkSummary $dotnet))" -ForegroundColor DarkGray
+
 if (-not $OutputPath) {
     $OutputPath = Join-Path $repoRoot 'artifacts\server-publish'
 }
 
-& dotnet publish (Join-Path $repoRoot 'src\RevitMCPServer\RevitMCPServer.csproj') `
+& $dotnet publish (Join-Path $repoRoot 'src\RevitMCPServer\RevitMCPServer.csproj') `
     -c Release -o $OutputPath --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 

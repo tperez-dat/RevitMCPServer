@@ -28,6 +28,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+. (Join-Path $PSScriptRoot 'lib\Resolve-Dotnet.ps1')
+$dotnet = Resolve-DotnetPath
+Write-Host "dotnet : $dotnet  (SDKs: $(Get-DotnetSdkSummary $dotnet))" -ForegroundColor DarkGray
+
 # Revit 2027 needs the .NET 10 SDK; 2025 and 2026 need .NET 8.
 $sdkForVersion = @{ '2025' = '8'; '2026' = '8'; '2027' = '10' }
 
@@ -39,7 +43,7 @@ foreach ($version in $RevitVersions) {
     Write-Host "=== Revit $version (.NET $($sdkForVersion[$version])) ===" -ForegroundColor Cyan
 
     $project = Join-Path $repoRoot 'src\RevitMCPBridge\RevitMCPBridge.csproj'
-    & dotnet build $project -c $Configuration "-p:RevitVersion=$version" --nologo
+    & $dotnet build $project -c $Configuration "-p:RevitVersion=$version" --nologo
     if ($LASTEXITCODE -ne 0) { throw "Build failed for Revit $version." }
 
     $source = Join-Path $repoRoot "artifacts\bridge\$version"

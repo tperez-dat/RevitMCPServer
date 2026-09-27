@@ -28,14 +28,17 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
-& dotnet build (Join-Path $repoRoot 'tools\RevitMCPProbe\RevitMCPProbe.csproj') -c Release --nologo
+. (Join-Path $PSScriptRoot 'lib\Resolve-Dotnet.ps1')
+$dotnet = Resolve-DotnetPath
+
+& $dotnet build (Join-Path $repoRoot 'tools\RevitMCPProbe\RevitMCPProbe.csproj') -c Release --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Probe build failed.' }
 
 $probeArgs = @()
 if ($Writes) { $probeArgs += '--writes' }
 if ($PSBoundParameters['Verbose']) { $probeArgs += '--verbose' }
 
-& dotnet (Join-Path $repoRoot 'artifacts\probe\RevitMCPProbe.dll') @probeArgs
+& $dotnet (Join-Path $repoRoot 'artifacts\probe\RevitMCPProbe.dll') @probeArgs
 $probeExit = $LASTEXITCODE
 
 Write-Host ''
