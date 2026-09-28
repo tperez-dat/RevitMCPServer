@@ -33,8 +33,12 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\bridge\$(RevitVersion)\</OutputPath>
     <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
-    <!-- WPF/WinForms are deliberately unused so the add-in cross-compiles on Linux CI. -->
-    <UseWPF>false</UseWPF>
+    <!--
+      WPF is enabled only for its imaging types: Revit's RibbonItem.LargeImage is a
+      System.Windows.Media.ImageSource, so ribbon icons are impossible without it. No XAML and no
+      windows are used. EnableWindowsTargeting above still lets this restore and compile on Linux.
+    -->
+    <UseWPF>true</UseWPF>
     <UseWindowsForms>false</UseWindowsForms>
   </PropertyGroup>
 
@@ -47,12 +51,31 @@
     <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
+  <!--
+    Enabling WPF swaps the implicit-usings set: System.IO is dropped and System.Windows.Shapes is
+    added, because the latter's Path type would otherwise collide with System.IO.Path. This add-in
+    does plenty of file work and draws no XAML shapes, so restore one and remove the other.
+  -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Remove="System.Windows.Shapes" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\RevitMCP.Contracts\RevitMCP.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="RevitMCPBridge.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    Ribbon icons, embedded rather than copied: an add-in loaded from a subfolder has no reliable
+    base path at run time, and an embedded image cannot go missing after deployment. Replacing the
+    PNGs in Resources\ and rebuilding is all that is needed to change them.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" />
   </ItemGroup>
 
 </Project>

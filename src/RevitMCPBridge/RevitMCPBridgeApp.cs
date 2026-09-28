@@ -1,3 +1,5 @@
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -140,6 +142,7 @@ public sealed class RevitMCPBridgeApp : IExternalApplication
                 "On: the bridge may also change the selection, the active view, and the model. " +
                 "Every change runs in its own named transaction, so Ctrl+Z reverses it.\n\n" +
                 "This resets to off each time Revit starts.";
+            ApplyIcons(toggle, "WriteToggle");
             WriteToggle = toggle;
         }
 
@@ -150,7 +153,52 @@ public sealed class RevitMCPBridgeApp : IExternalApplication
             assemblyPath, typeof(ShowStatusCommand).FullName)) as PushButton;
 
         if (status is not null)
+        {
             status.ToolTip = "Show the bridge's pipe name, request count, and log location.";
+            ApplyIcons(status, "BridgeStatus");
+        }
+    }
+
+    /// <summary>
+    /// Gives a button its 32px and 16px icons. A missing or unreadable image is logged and skipped:
+    /// Revit shows its default placeholder, which is a far better outcome than losing the ribbon
+    /// over an icon.
+    /// </summary>
+    private static void ApplyIcons(RibbonButton button, string baseName)
+    {
+        if (LoadIcon($"{baseName}32.png") is { } large) button.LargeImage = large;
+        if (LoadIcon($"{baseName}16.png") is { } small) button.Image = small;
+    }
+
+    /// <summary>Reads an icon embedded in this assembly under Resources\.</summary>
+    private static ImageSource? LoadIcon(string fileName)
+    {
+        var resourceName = $"RevitMCPBridge.Resources.{fileName}";
+
+        try
+        {
+            using var stream = typeof(RevitMCPBridgeApp).Assembly.GetManifestResourceStream(resourceName);
+            if (stream is null)
+            {
+                BridgeLog.Warn($"Ribbon icon '{resourceName}' is not embedded in the assembly.", null);
+                return null;
+            }
+
+            var image = new BitmapImage();
+            image.BeginInit();
+            // OnLoad decodes immediately, so the image survives the stream being disposed below.
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze();
+
+            return image;
+        }
+        catch (Exception ex)
+        {
+            BridgeLog.Warn($"Ribbon icon '{resourceName}' could not be loaded.", ex);
+            return null;
+        }
     }
 
     /// <summary>The write button's caption, which is how the user sees the current state.</summary>

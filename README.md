@@ -41,6 +41,29 @@ in a single transaction named after the command, so one Ctrl+Z in Revit reverses
 | `tools/RevitMCPProbe` | Console checker: runs every read tool against a live model and reports pass/fail |
 | `tests/RevitMCP.Tests` | 55 tests covering framing, paging, the catalogue, the pipe round-trip, and the probe |
 
+## Ribbon icons
+
+The two ribbon buttons use PNGs in **`src/RevitMCPBridge/Resources/`**:
+
+| File | Button | Size |
+| --- | --- | --- |
+| `WriteToggle32.png` | Allow MCP Writes | 32 x 32 |
+| `WriteToggle16.png` | Allow MCP Writes | 16 x 16 |
+| `BridgeStatus32.png` | Bridge Status | 32 x 32 |
+| `BridgeStatus16.png` | Bridge Status | 16 x 16 |
+
+The ones committed are plain placeholders. To use your own, overwrite the files keeping the same
+names and sizes, then re-run `build\deploy-addin.cmd` and restart Revit.
+
+Keep them **PNG with transparency**, at exactly those pixel sizes — Revit takes the 32px for a large
+ribbon button and the 16px when the panel is collapsed, and does not rescale gracefully. A test
+checks the format and dimensions, so a wrong-sized file fails the build rather than showing up as a
+distorted button.
+
+The images are embedded into the assembly rather than copied beside it, since an add-in loaded from
+a subfolder has no dependable base path at run time. An icon that cannot be loaded is logged and
+skipped, and Revit falls back to its own placeholder.
+
 ## Adding a Revit version later
 
 Support for all three releases is already in the source; a release is skipped only when its SDK is
