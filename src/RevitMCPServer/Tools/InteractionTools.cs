@@ -29,7 +29,11 @@ public sealed class InteractionTools(ToolGateway gateway)
     }
 
     [McpServerTool(Name = Commands.OpenView)]
-    [Description("Makes a view active in Revit, by id or name. View templates and non-graphical " +
+    [Description("Makes a view active in Revit, by id or name, so the user can see it. " +
+                 "This is for showing a human something — NOT for finding elements. Do not open " +
+                 "views to search the model: LIST_ELEMENTS and FIND_BY_PARAM already query the " +
+                 "whole document in one call, including annotation categories, and iterating views " +
+                 "is both far slower and disruptive to the user. View templates and non-graphical " +
                  "internal views cannot be activated. Requires write mode.")]
     public Task<string> OpenView(
         CancellationToken ct,

@@ -19,9 +19,20 @@ public sealed class ListCategoriesHandler : IBridgeCommandHandler
         var onlyNonEmpty = context.Args.Bool("nonEmptyOnly");
 
         var categories = new List<Category>();
+        var omitted = new Dictionary<string, int>(StringComparer.Ordinal);
+
         foreach (Category category in doc.Settings.Categories)
         {
-            if (onlyModel && category.CategoryType != CategoryType.Model) continue;
+            if (onlyModel && category.CategoryType != CategoryType.Model)
+            {
+                // Track what the filter hid. Annotation categories - revision clouds, dimensions,
+                // text notes, tags - are real, queryable categories, and a caller told only about
+                // model categories may wrongly conclude they must be found some other way.
+                var type = category.CategoryType.ToString();
+                omitted[type] = omitted.GetValueOrDefault(type) + 1;
+                continue;
+            }
+
             categories.Add(category);
         }
 
@@ -53,7 +64,23 @@ public sealed class ListCategoriesHandler : IBridgeCommandHandler
             rows.Add(row);
         }
 
-        return Json.Page("categories", rows.Skip(offset).Take(limit), rows.Count, offset, limit);
+        var result = Json.Page("categories", rows.Skip(offset).Take(limit), rows.Count, offset, limit);
+
+        if (omitted.Count > 0)
+        {
+            var summary = new JsonObject();
+            foreach (var (type, count) in omitted.OrderBy(e => e.Key, StringComparer.Ordinal))
+                summary[type] = count;
+
+            result["omittedByModelOnlyFilter"] = summary;
+            result["note"] = "Only model categories are listed. " +
+                             $"{omitted.Values.Sum()} further categories exist and are fully " +
+                             "queryable, including annotation categories such as Revision Clouds, " +
+                             "Dimensions, Text Notes, Grids and tags. Call again with " +
+                             "'modelOnly': false to see them.";
+        }
+
+        return result;
     }
 
     private static string? BuiltInName(Category category)

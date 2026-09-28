@@ -344,6 +344,14 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
 - **Family types must already be loaded.** The modelling tools place what is in the project; they
   cannot load a family that is not there. Call `LIST_FAMILY_TYPES` first. When a name does not match,
   the error lists what is available, so the assistant can correct itself in one step.
+- **Never open views to find things.** `LIST_ELEMENTS` and `FIND_BY_PARAM` query the whole document
+  in one call, annotation categories included, so `LIST_ELEMENTS` with `category: "Revision Clouds"`
+  finds every revision cloud in the model regardless of which view owns it. Iterating views with
+  `OPEN_VIEW` is far slower and hijacks the user's screen. Turning **Allow MCP Writes** off makes
+  this impossible, since `OPEN_VIEW` is write-gated — a good default for read-only sessions.
+- **`LIST_CATEGORIES` hides annotation categories by default.** `modelOnly` defaults to true, so
+  Revision Clouds, Dimensions, Text Notes, Grids and tags are omitted; the response reports how many
+  it hid. Pass `modelOnly: false` to see them. They are queryable either way.
 - **`FIND_BY_PARAM` needs a category.** Parameter names cannot be pushed into a Revit filter, so it
   walks elements. Scope it, or pass `allCategories` and accept a slow, capped scan.
 - **Walls ignore the z you pass** — a wall sits on its level. Use `offset`. Beams do keep their z.

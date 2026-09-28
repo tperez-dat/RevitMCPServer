@@ -34,7 +34,10 @@ public sealed class QueryTools(ToolGateway gateway)
 
     [McpServerTool(Name = Commands.ListCategories)]
     [Description("Lists the categories in the model. Call this to discover the exact category names " +
-                 "other tools expect. Defaults to model categories only. " + PagingNote)]
+                 "other tools expect. Defaults to model categories only (walls, doors, floors); pass " +
+                 "modelOnly=false to also see annotation categories such as Revision Clouds, " +
+                 "Dimensions, Text Notes, Grids and tags, which are equally queryable with " +
+                 "LIST_ELEMENTS. The response says how many categories the filter hid. " + PagingNote)]
     public Task<string> ListCategories(
         CancellationToken ct,
         [Description("Model categories only (walls, doors, etc.), excluding annotation and internal categories. Default true.")]
@@ -51,7 +54,13 @@ public sealed class QueryTools(ToolGateway gateway)
 
     [McpServerTool(Name = Commands.ListElements)]
     [Description("Lists element instances in a category, with id, name, category and type. " +
-                 "Use LIST_CATEGORIES first if unsure of the category name. " + PagingNote)]
+                 "Searches the WHOLE document by default — you never need to open or iterate views " +
+                 "to find elements. This works for annotation categories too, so view-specific " +
+                 "things such as revision clouds, dimensions, text notes and tags are found in one " +
+                 "call: pass category='Revision Clouds'. Use activeViewOnly only when you " +
+                 "specifically want what is visible in the current view. " +
+                 "Use LIST_CATEGORIES (with modelOnly=false for annotation categories) if unsure of " +
+                 "the exact name. " + PagingNote)]
     public Task<string> ListElements(
         [Description("Category name as Revit shows it, e.g. 'Walls', 'Doors', 'Structural Framing'.")]
         string category,
