@@ -53,6 +53,48 @@ public class RibbonIconTests
         Assert.Equal(expectedSize, height);
     }
 
+    [Theory]
+    [MemberData(nameof(ExpectedIcons))]
+    public void IconDoesNotClaimADpiOtherThan96(string fileName, int expectedSize)
+    {
+        // WPF sizes an image by pixels * 96 / DPI, so a PNG exported at 72 DPI - which several
+        // editors do by default - asks for 32 * 96/72 = 42.7 device-independent pixels. Revit gives
+        // a large ribbon button 32, so WPF resamples it down and the icon looks blurred and
+        // misplaced even though its pixel dimensions are correct. Correct dimensions are therefore
+        // not enough to check.
+        //
+        // With no pHYs chunk WPF uses exactly 96 DPI and renders 1:1, so the rule is: either no
+        // pHYs at all, or one that genuinely means 96 DPI.
+        var bytes = File.ReadAllBytes(Path.Combine(ResourceDirectory, fileName));
+
+        var position = 8;   // past the PNG signature
+        while (position + 8 <= bytes.Length)
+        {
+            var length = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(position, 4));
+            var tag = System.Text.Encoding.ASCII.GetString(bytes, position + 4, 4);
+
+            if (tag == "pHYs")
+            {
+                var perUnitX = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(position + 8, 4));
+                var unit = bytes[position + 16];
+
+                // unit 1 is pixels per metre; 0 means "aspect ratio only", which imposes no DPI.
+                if (unit == 1)
+                {
+                    var dpi = Math.Round(perUnitX * 0.0254);
+                    Assert.True(Math.Abs(dpi - 96) < 1,
+                        $"{fileName} declares {dpi} DPI. Revit's ribbon needs 96 DPI, or no DPI " +
+                        "metadata at all. Re-export at 96 DPI, or strip the pHYs chunk.");
+                }
+
+                return;
+            }
+
+            if (tag == "IDAT" || tag == "IEND") return;   // pHYs must precede IDAT
+            position += 12 + length;
+        }
+    }
+
     [Fact]
     public void TheProjectEmbedsEveryIcon()
     {

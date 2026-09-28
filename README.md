@@ -55,10 +55,17 @@ The two ribbon buttons use PNGs in **`src/RevitMCPBridge/Resources/`**:
 The ones committed are plain placeholders. To use your own, overwrite the files keeping the same
 names and sizes, then re-run `build\deploy-addin.cmd` and restart Revit.
 
-Keep them **PNG with transparency**, at exactly those pixel sizes — Revit takes the 32px for a large
-ribbon button and the 16px when the panel is collapsed, and does not rescale gracefully. A test
-checks the format and dimensions, so a wrong-sized file fails the build rather than showing up as a
-distorted button.
+Keep them **PNG with transparency**, at exactly those pixel sizes, and **export at 96 DPI**.
+
+That last point catches people. WPF sizes an image by `pixels * 96 / DPI`, not by pixel count, so a
+32x32 PNG saved at 72 DPI — the default in several editors, including Photoshop and many SVG
+exporters — asks for 42.7 device-independent pixels. Revit gives a large ribbon button 32, so WPF
+resamples it down and the icon looks blurred and misaligned even though its dimensions are correct.
+Stripping the DPI metadata entirely works too: with no `pHYs` chunk WPF uses exactly 96 and renders
+1:1.
+
+Tests check the format, the dimensions, and the declared DPI, so any of these fails the build rather
+than showing up as a distorted button in Revit.
 
 The images are embedded into the assembly rather than copied beside it, since an add-in loaded from
 a subfolder has no dependable base path at run time. An icon that cannot be loaded is logged and
