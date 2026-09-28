@@ -1,0 +1,69 @@
+REVIT MCP TOOL LIST  -  42 tools
+RevitMCPBridge named pipe + RevitMCPServer (MCP stdio)
+Lengths and coordinates are decimal feet throughout.
+Every list tool is paged: pass the returned 'cursor' back for the next page.
+
+QUERY / READ TOOLS
+------------------
+No opt-in needed. These never change the model.
+  GET_PROJECT_INFO             Project metadata.
+  LIST_ELEMENTS                List elements by category.
+  COUNT_ELEMENTS               Count elements in a category.
+  GET_ELEMENT_PROPERTIES       All instance parameters for an element.
+  GET_ELEMENT_TYPE_PROPERTIES  Type-level parameters for an element's type.
+  GET_ELEMENT_LOCATION         Point or curve location of an element.
+  FIND_BY_PARAM                Find elements by parameter name/value.
+  GET_MODEL_WARNINGS           Model warnings.
+  LIST_CATEGORIES              Model categories.
+  LIST_LEVELS                  Levels with elevation.
+  LIST_PHASES                  Project phases.
+  LIST_WORKSETS                Worksets (workshared models only).
+  LIST_LINKED_MODELS           Linked Revit models.
+  GET_ACTIVE_VIEW              The active view.
+  LIST_VIEWS                   Views, optionally filtered by view type.
+  LIST_SHEETS                  Sheets.
+  GET_SHEET_CONTENTS           Views placed on a sheet.
+  GET_SCHEDULES                Schedules, excluding titleblock revision schedules.
+  LIST_FAMILIES                Families, optionally filtered by category.
+  LIST_FAMILY_TYPES            Family types/symbols.
+  LIST_MATERIALS               Materials.
+  GET_MATERIAL_PROPERTIES      Material properties by id or name.
+  GET_SELECTION                Currently selected element ids.
+  BRIDGE_STATUS                Bridge health/status.
+
+SELECTION / VIEW INTERACTION
+----------------------------
+Requires 'Allow MCP Writes' on the Revit ribbon.
+  SET_SELECTION                Set the active selection.
+  OPEN_VIEW                    Activate a view by id or name.
+  ISOLATE_IN_VIEW              Temporarily isolate elements in the active view.
+
+MODELLING / CREATION
+--------------------
+Requires 'Allow MCP Writes'. Each runs in one named transaction (Ctrl+Z undoes it).
+  CREATE_WALL                  Create a wall.
+  CREATE_GRID                  Create a grid line.
+  CREATE_STRUCTURAL_COLUMN     Place a structural column.
+  CREATE_STRUCTURAL_FRAMING    Create a beam/framing element.
+  CREATE_FLOOR                 Create a floor from a boundary polygon.
+  CREATE_DRAFT_DETAIL          Create detail elements in a view.
+  CREATE_LEVEL                 Create a level, optionally with a floor plan.
+  CREATE_SHEET                 Create a sheet, optionally with a titleblock.
+  PLACE_VIEW_ON_SHEET          Place a view or schedule on a sheet.
+
+EDITING
+-------
+Requires 'Allow MCP Writes'. Each runs in one named transaction.
+  SET_ELEMENT_PARAMETER        Set a parameter value on one or more elements.
+  DELETE_ELEMENT               Delete elements, reporting what else went with them.
+
+DOCUMENT OPERATIONS
+-------------------
+Requires 'Allow MCP Writes'. Run outside a transaction.
+  SAVE_MODEL                   Save the active document.
+  SYNC_WITH_CENTRAL            Synchronise a workshared model with central.
+
+EXPORT / INTEGRATION
+--------------------
+  EXPORT_SCHEDULE_TO_CSV       Export a named schedule to CSV.
+  EXTRACT_PDF_GEOMETRY         Extract geometry from a PDF (runs in the MCP server; no Revit involvement).
