@@ -38,6 +38,7 @@ public static class HandlerRegistry
             new ListViewsHandler(),
             new ListSheetsHandler(),
             new GetSheetContentsHandler(),
+            new GetViewContentsHandler(),
             new GetSchedulesHandler(),
 
             // families / materials

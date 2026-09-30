@@ -1,4 +1,4 @@
-REVIT MCP TOOL LIST  -  42 tools
+REVIT MCP TOOL LIST  -  43 tools
 RevitMCPBridge named pipe + RevitMCPServer (MCP stdio)
 Lengths and coordinates are decimal feet throughout.
 Every list tool is paged: pass the returned 'cursor' back for the next page.
@@ -21,6 +21,7 @@ No opt-in needed. These never change the model.
   LIST_LINKED_MODELS           Linked Revit models.
   GET_ACTIVE_VIEW              The active view.
   LIST_VIEWS                   Views, optionally filtered by view type.
+  GET_VIEW_CONTENTS            Elements visible in a view, with their positions in view coordinates.
   LIST_SHEETS                  Sheets.
   GET_SHEET_CONTENTS           Views placed on a sheet.
   GET_SCHEDULES                Schedules, excluding titleblock revision schedules.

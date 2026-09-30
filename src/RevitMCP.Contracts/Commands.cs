@@ -22,6 +22,7 @@ public static class Commands
     public const string ListViews = "LIST_VIEWS";
     public const string ListSheets = "LIST_SHEETS";
     public const string GetSheetContents = "GET_SHEET_CONTENTS";
+    public const string GetViewContents = "GET_VIEW_CONTENTS";
     public const string ListFamilies = "LIST_FAMILIES";
     public const string ListFamilyTypes = "LIST_FAMILY_TYPES";
     public const string ListMaterials = "LIST_MATERIALS";
@@ -111,6 +112,7 @@ public static class CommandCatalog
         new(Commands.ListViews, CommandKind.Read, "Views, optionally filtered by view type."),
         new(Commands.ListSheets, CommandKind.Read, "Sheets."),
         new(Commands.GetSheetContents, CommandKind.Read, "Views placed on a sheet."),
+        new(Commands.GetViewContents, CommandKind.Read, "Elements visible in a view, with their positions in view coordinates."),
         new(Commands.ListFamilies, CommandKind.Read, "Families, optionally filtered by category."),
         new(Commands.ListFamilyTypes, CommandKind.Read, "Family types/symbols."),
         new(Commands.ListMaterials, CommandKind.Read, "Materials."),

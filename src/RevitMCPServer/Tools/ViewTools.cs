@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Nodes;
 using ModelContextProtocol.Server;
 using RevitMCP.Contracts;
 
@@ -57,6 +58,53 @@ public sealed class ViewTools(ToolGateway gateway)
         [Description("The sheet's name.")] string? name = null) =>
         gateway.CallAsync(Commands.GetSheetContents, ToolGateway.Args(
             ("sheetId", sheetId), ("sheetNumber", sheetNumber), ("name", name)), ct);
+
+    [McpServerTool(Name = Commands.GetViewContents)]
+    [Description("""
+        Reports everything visible in a view AND where each thing sits on the page. This is the tool
+        to call before annotating a view.
+
+        Takes any view by id or name - the view does NOT need to be open, so this works with write
+        mode off. Never open views just to inspect them.
+
+        Positions are in the view's own coordinate system, in feet: 'u' runs right across the page,
+        'v' runs up, and the origin is the view's origin. These are the SAME coordinates
+        CREATE_DRAFT_DETAIL draws in, so a position reported here can be passed straight back as a
+        drawing coordinate. 'depth' is toward the viewer, so geometry with crossesViewPlane=true is
+        what a section actually cuts through rather than what it sees beyond the cut.
+
+        Each element reports minU/minV/maxU/maxV, its centre, width, height and area. The view
+        reports its crop bounds in the same coordinates, which is the area annotation must stay
+        inside.
+
+        Results are ordered largest first, so the elements that dominate the drawing survive paging.
+        Existing annotation is included and marked with categoryType, so you can see what is already
+        tagged rather than duplicating it.
+        """)]
+    public Task<string> GetViewContents(
+        CancellationToken ct,
+        [Description("The view's element id. Omit to use the active view.")] long? viewId = null,
+        [Description("The view's exact name, instead of viewId.")] string? viewName = null,
+        [Description("Limit to these category names, e.g. ['Walls','Floors']. Omit for everything visible.")]
+        string[]? categories = null,
+        [Description("Include annotation elements already in the view. Default true.")]
+        bool includeAnnotation = true,
+        [Description("Maximum elements to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null)
+    {
+        JsonArray? categoryList = null;
+        if (categories is { Length: > 0 })
+        {
+            categoryList = [];
+            foreach (var name in categories) categoryList.Add(name);
+        }
+
+        return gateway.CallAsync(Commands.GetViewContents, ToolGateway.Args(
+            ("viewId", viewId), ("viewName", viewName), ("categories", categoryList),
+            ("includeAnnotation", includeAnnotation), ("limit", limit), ("cursor", cursor)), ct,
+            // Measuring every element in a busy view is real work.
+            timeoutMs: 120_000);
+    }
 
     [McpServerTool(Name = Commands.GetSchedules)]
     [Description("Lists the project's schedules with their category and column names. Titleblock " +

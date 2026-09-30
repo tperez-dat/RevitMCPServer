@@ -141,6 +141,9 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
     {
         await CheckAsync(Commands.ListViews, Args(("limit", 10)), ct);
 
+        // Against the active view, so it measures real geometry rather than an empty view.
+        await CheckAsync(Commands.GetViewContents, Args(("limit", 10)), ct);
+
         var sheets = await CheckAsync(Commands.ListSheets, Args(("limit", 5)), ct);
         var sheetId = sheets.Arr("sheets").FirstOrDefault()?["id"]?.GetValue<long>();
 
