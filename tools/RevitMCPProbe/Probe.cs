@@ -66,6 +66,13 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         await CheckAsync(Commands.ListInPlaceFamilies, Args(("limit", 5)), ct);
         await CheckAsync(Commands.ListDesignOptions, null, ct);
         await CheckAsync(Commands.ListUnplacedViews, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.GetRevisions, null, ct);
+        await CheckAsync(Commands.ListFilters, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListViewTemplates, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListStyles, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListSharedParameters, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListRoomAreaSpaceStatus, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.GetElementOwnership, null, ct);
 
         var levels = await CheckAsync(Commands.ListLevels, Args(("limit", 5)), ct);
         await ProbeElementsOfFirstPopulatedCategory(ct);

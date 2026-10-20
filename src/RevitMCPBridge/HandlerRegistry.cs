@@ -68,6 +68,13 @@ public static class HandlerRegistry
             new ListInPlaceFamiliesHandler(),
             new ListDesignOptionsHandler(),
             new ListUnplacedViewsHandler(),
+            new GetRevisionsHandler(),
+            new ListFiltersHandler(),
+            new ListViewTemplatesHandler(),
+            new ListStylesHandler(),
+            new ListSharedParametersHandler(),
+            new ListRoomAreaSpaceStatusHandler(),
+            new GetElementOwnershipHandler(),
 
             // editing
             new SetElementParameterHandler(),

@@ -128,4 +128,81 @@ public sealed class ModelHealthTools(ToolGateway gateway)
         [Description("Cursor from a previous call.")] string? cursor = null) =>
         gateway.CallAsync(Commands.ListUnplacedViews, ToolGateway.Args(("limit", limit), ("cursor", cursor)),
             ct, timeoutMs: 120_000);
+
+    [McpServerTool(Name = Commands.GetRevisions)]
+    [Description("Lists revisions in sequence with their number, description, date, issued state, " +
+                 "and how many revision clouds reference each. Flags revisions with no clouds — " +
+                 "they still appear on every sheet's revision schedule.")]
+    public Task<string> GetRevisions(CancellationToken ct) =>
+        gateway.CallAsync(Commands.GetRevisions, ToolGateway.Args(), ct);
+
+    [McpServerTool(Name = Commands.ListFilters)]
+    [Description("Lists view filters with their categories and which views apply them, including " +
+                 "through view templates. Flags filters applied nowhere. Ordered by usage, so the " +
+                 "load-bearing ones come first. " + PagingNote)]
+    public Task<string> ListFilters(
+        CancellationToken ct,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListFilters, ToolGateway.Args(("limit", limit), ("cursor", cursor)),
+            ct, timeoutMs: 120_000);
+
+    [McpServerTool(Name = Commands.ListViewTemplates)]
+    [Description("Lists view templates and how many views each governs, flagging those governing " +
+                 "none. Also reports how many views have no template at all, which is usually the " +
+                 "more interesting number. " + PagingNote)]
+    public Task<string> ListViewTemplates(
+        CancellationToken ct,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListViewTemplates, ToolGateway.Args(("limit", limit), ("cursor", cursor)), ct);
+
+    [McpServerTool(Name = Commands.ListStyles)]
+    [Description("Inventories line patterns, fill patterns, text types and dimension types, with " +
+                 "instance counts for the annotation types. For which of them are unused and " +
+                 "purgeable, call GET_PURGEABLE instead — this is inventory, not a verdict. " + PagingNote)]
+    public Task<string> ListStyles(
+        CancellationToken ct,
+        [Description("Limit to one kind: textType, dimensionType, linePattern, fillPattern. Default all.")]
+        string kind = "all",
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListStyles, ToolGateway.Args(
+            ("kind", kind), ("limit", limit), ("cursor", cursor)), ct);
+
+    [McpServerTool(Name = Commands.ListSharedParameters)]
+    [Description("Lists bound shared and project parameters with their GUID, binding (instance or " +
+                 "type) and categories. Shared parameters have a GUID stable across models and are " +
+                 "the only ones safe to coordinate schedules or dashboards on. " + PagingNote)]
+    public Task<string> ListSharedParameters(
+        CancellationToken ct,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListSharedParameters, ToolGateway.Args(("limit", limit), ("cursor", cursor)), ct);
+
+    [McpServerTool(Name = Commands.ListRoomAreaSpaceStatus)]
+    [Description("Finds rooms, areas and spaces that are unplaced (no location) or not enclosed " +
+                 "(placed but the boundary does not close, so they report zero area). Both " +
+                 "schedule as blanks and are easy to miss visually. Redundant rooms come through " +
+                 "GET_MODEL_WARNINGS instead. " + PagingNote)]
+    public Task<string> ListRoomAreaSpaceStatus(
+        CancellationToken ct,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListRoomAreaSpaceStatus, ToolGateway.Args(("limit", limit), ("cursor", cursor)),
+            ct, timeoutMs: 120_000);
+
+    [McpServerTool(Name = Commands.GetElementOwnership)]
+    [Description("Reports who owns what in a workshared model. Workset ownership always; " +
+                 "element-level checkout only when you name a category, because that is queried " +
+                 "per element and is the expensive half. Says plainly when the model is not " +
+                 "workshared. " + PagingNote)]
+    public Task<string> GetElementOwnership(
+        CancellationToken ct,
+        [Description("Category to check element ownership within, e.g. 'Walls'. Omit for worksets only.")]
+        string? category = null,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.GetElementOwnership, ToolGateway.Args(
+            ("category", category), ("limit", limit), ("cursor", cursor)), ct, timeoutMs: 180_000);
 }

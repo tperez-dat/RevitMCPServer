@@ -164,16 +164,19 @@ public sealed class QueryTools(ToolGateway gateway)
         gateway.CallAsync(Commands.ListPhases, ToolGateway.Args(), ct);
 
     [McpServerTool(Name = Commands.ListWorksets)]
-    [Description("Lists worksets. Reports that the model is not workshared rather than failing, if " +
-                 "that is the case.")]
+    [Description("Lists worksets with how many elements each contains, flagging empty ones. " +
+                 "Reports that the model is not workshared rather than failing, if that is the case.")]
     public Task<string> ListWorksets(
         CancellationToken ct,
         [Description("Which kind: user, standard, view, family, other, or all. Default user.")]
         string kind = "user",
+        [Description("Count elements in each workset. Default true; one pass over the model.")]
+        bool includeElementCounts = true,
         [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
         [Description("Cursor from a previous call.")] string? cursor = null) =>
         gateway.CallAsync(Commands.ListWorksets, ToolGateway.Args(
-            ("kind", kind), ("limit", limit), ("cursor", cursor)), ct);
+            ("kind", kind), ("includeElementCounts", includeElementCounts),
+            ("limit", limit), ("cursor", cursor)), ct, timeoutMs: 120_000);
 
     [McpServerTool(Name = Commands.ListLinkedModels)]
     [Description("Lists linked Revit models with their load status, path, attachment type, and how " +

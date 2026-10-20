@@ -203,20 +203,55 @@ public sealed class ListWorksetsHandler : IBridgeCommandHandler
             .OrderBy(w => w.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var rows = worksets.Select(workset => (JsonNode?)new JsonObject
-        {
-            ["id"] = workset.Id.IntegerValue,
-            ["name"] = workset.Name,
-            ["kind"] = workset.Kind.ToString(),
-            ["isOpen"] = workset.IsOpen,
-            ["isEditable"] = workset.IsEditable,
-            ["isDefaultWorkset"] = workset.IsDefaultWorkset,
-            ["owner"] = workset.Owner
-        });
+        // Counting elements per workset is what identifies an empty workset, which is the usual
+        // finding. One pass over the model beats a filtered collector per workset.
+        var includeCounts = context.Args.Bool("includeElementCounts", true);
+        var counts = includeCounts ? CountByWorkset(doc) : null;
 
-        var result = Json.Page("worksets", rows, worksets.Count, offset, limit);
+        var rows = worksets.Select(workset =>
+        {
+            var row = new JsonObject
+            {
+                ["id"] = workset.Id.IntegerValue,
+                ["name"] = workset.Name,
+                ["kind"] = workset.Kind.ToString(),
+                ["isOpen"] = workset.IsOpen,
+                ["isEditable"] = workset.IsEditable,
+                ["isDefaultWorkset"] = workset.IsDefaultWorkset,
+                ["owner"] = string.IsNullOrEmpty(workset.Owner) ? null : workset.Owner
+            };
+
+            if (counts is not null)
+            {
+                var count = counts.GetValueOrDefault(workset.Id.IntegerValue);
+                row["elementCount"] = count;
+                row["isEmpty"] = count == 0;
+            }
+
+            return (JsonNode?)row;
+        }).ToList();
+
+        var result = Json.Page("worksets", rows.Skip(offset).Take(limit), rows.Count, offset, limit);
         result["isWorkshared"] = true;
+
+        if (counts is not null)
+            result["emptyWorksetCount"] = rows.Count(r => r?["isEmpty"]?.GetValue<bool>() == true);
+
         return result;
+    }
+
+    /// <summary>Elements per workset, from a single pass over the model.</summary>
+    private static Dictionary<int, int> CountByWorkset(Document doc)
+    {
+        var counts = new Dictionary<int, int>();
+
+        foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+        {
+            var id = element.WorksetId.IntegerValue;
+            counts[id] = counts.GetValueOrDefault(id) + 1;
+        }
+
+        return counts;
     }
 }
 

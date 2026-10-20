@@ -1,12 +1,13 @@
-REVIT MCP TOOL LIST  -  51 tools
+REVIT MCP TOOL LIST  -  58 tools
 RevitMCPBridge named pipe + RevitMCPServer (MCP stdio)
 Lengths and coordinates are decimal feet throughout.
 Every list tool is paged: pass the returned 'cursor' back for the next page.
 
 MODEL HEALTH
 ------------
-Read-only QC. Run with write mode off. Start with GET_MODEL_HEALTH.
+Read-only QC. Run with write mode off. GET_MODEL_HEALTH runs all of these at once.
   GET_MODEL_HEALTH             Every health check in one consistent snapshot.
+  GET_MODEL_WARNINGS           Model warnings.
   GET_PURGEABLE                Elements Revit's Purge Unused would remove.
   GET_CAD_IMPORTS              DWG/DXF imports and CAD links, and whether each is imported or linked.
   LIST_IMAGES                  Raster images and PDFs placed in the model.
@@ -14,7 +15,13 @@ Read-only QC. Run with write mode off. Start with GET_MODEL_HEALTH.
   LIST_IN_PLACE_FAMILIES       In-place families, which cannot be reused or scheduled well.
   LIST_DESIGN_OPTIONS          Design option sets and options, with element counts.
   LIST_UNPLACED_VIEWS          Views not placed on any sheet.
-  GET_MODEL_WARNINGS           Model warnings.
+  GET_REVISIONS                Revision sequence, issued state, and revisions with no clouds.
+  LIST_FILTERS                 View filters and which views use them.
+  LIST_VIEW_TEMPLATES          View templates and how many views each governs.
+  LIST_STYLES                  Line patterns, fill patterns, text and dimension types.
+  LIST_SHARED_PARAMETERS       Shared and project parameters, with their bindings.
+  LIST_ROOM_AREA_SPACE_STATUS  Unplaced and unenclosed rooms, areas and spaces.
+  GET_ELEMENT_OWNERSHIP        Who owns or last changed elements in a workshared model.
 
 QUERY / READ TOOLS
 ------------------

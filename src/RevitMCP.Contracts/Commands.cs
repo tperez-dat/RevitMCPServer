@@ -55,6 +55,13 @@ public static class Commands
     public const string ListInPlaceFamilies = "LIST_IN_PLACE_FAMILIES";
     public const string ListDesignOptions = "LIST_DESIGN_OPTIONS";
     public const string ListUnplacedViews = "LIST_UNPLACED_VIEWS";
+    public const string GetRevisions = "GET_REVISIONS";
+    public const string ListFilters = "LIST_FILTERS";
+    public const string ListViewTemplates = "LIST_VIEW_TEMPLATES";
+    public const string ListStyles = "LIST_STYLES";
+    public const string ListSharedParameters = "LIST_SHARED_PARAMETERS";
+    public const string ListRoomAreaSpaceStatus = "LIST_ROOM_AREA_SPACE_STATUS";
+    public const string GetElementOwnership = "GET_ELEMENT_OWNERSHIP";
 
     // --- editing ---
     public const string SetElementParameter = "SET_ELEMENT_PARAMETER";
@@ -152,6 +159,13 @@ public static class CommandCatalog
         new(Commands.ListInPlaceFamilies, CommandKind.Read, "In-place families, which cannot be reused or scheduled well."),
         new(Commands.ListDesignOptions, CommandKind.Read, "Design option sets and options, with element counts."),
         new(Commands.ListUnplacedViews, CommandKind.Read, "Views not placed on any sheet."),
+        new(Commands.GetRevisions, CommandKind.Read, "Revision sequence, issued state, and revisions with no clouds."),
+        new(Commands.ListFilters, CommandKind.Read, "View filters and which views use them."),
+        new(Commands.ListViewTemplates, CommandKind.Read, "View templates and how many views each governs."),
+        new(Commands.ListStyles, CommandKind.Read, "Line patterns, fill patterns, text and dimension types."),
+        new(Commands.ListSharedParameters, CommandKind.Read, "Shared and project parameters, with their bindings."),
+        new(Commands.ListRoomAreaSpaceStatus, CommandKind.Read, "Unplaced and unenclosed rooms, areas and spaces."),
+        new(Commands.GetElementOwnership, CommandKind.Read, "Who owns or last changed elements in a workshared model."),
 
         new(Commands.SetElementParameter, CommandKind.ModelWrite, "Set a parameter value on one or more elements."),
         new(Commands.DeleteElement, CommandKind.ModelWrite, "Delete elements, reporting what else went with them."),

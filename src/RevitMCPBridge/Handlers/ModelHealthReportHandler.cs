@@ -38,7 +38,12 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
         ("designOptions", Commands.ListDesignOptions),
         ("unplacedViews", Commands.ListUnplacedViews),
         ("links", Commands.ListLinkedModels),
-        ("worksets", Commands.ListWorksets)
+        ("worksets", Commands.ListWorksets),
+        ("revisions", Commands.GetRevisions),
+        ("filters", Commands.ListFilters),
+        ("viewTemplates", Commands.ListViewTemplates),
+        ("sharedParameters", Commands.ListSharedParameters),
+        ("spatialElements", Commands.ListRoomAreaSpaceStatus)
     ];
 
     public string Command => Commands.GetModelHealth;
@@ -122,7 +127,8 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
 
         // Only the paged commands take a limit; the others ignore it harmlessly, but being
         // explicit keeps the intent readable.
-        if (command is not (Commands.GetProjectInfo or Commands.ListDesignOptions))
+        if (command is not (Commands.GetProjectInfo or Commands.ListDesignOptions
+                            or Commands.GetRevisions))
             args["limit"] = detailLimit;
 
         var request = new BridgeRequest
@@ -233,6 +239,26 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
                 break;
             case "worksets":
                 Copy("worksets", "totalMatched", "count");
+                break;
+            case "revisions":
+                Copy("revisions", "count");
+                Copy("revisionsWithNoClouds", "withNoCloudsCount");
+                break;
+            case "filters":
+                Copy("viewFilters", "totalMatched", "count");
+                Copy("viewFiltersUnused", "unusedCount");
+                break;
+            case "viewTemplates":
+                Copy("viewTemplates", "totalMatched", "count");
+                Copy("viewTemplatesUnused", "unusedCount");
+                Copy("viewsWithNoTemplate", "viewsWithNoTemplate");
+                break;
+            case "sharedParameters":
+                Copy("boundParameters", "totalMatched", "count");
+                Copy("sharedParameters", "sharedCount");
+                break;
+            case "spatialElements":
+                Copy("spatialProblems", "totalProblems");
                 break;
         }
     }
