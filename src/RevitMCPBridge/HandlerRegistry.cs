@@ -10,7 +10,7 @@ public static class HandlerRegistry
 {
     public static IReadOnlyList<IBridgeCommandHandler> CreateAll()
     {
-        var handlers = new IBridgeCommandHandler[]
+        var handlers = new List<IBridgeCommandHandler>
         {
             // bridge-local
             new BridgeStatusHandler(),
@@ -85,6 +85,12 @@ public static class HandlerRegistry
             // export
             new ExportScheduleToCsvHandler(),
         };
+
+        // The report delegates to the handlers above rather than reimplementing them, so it is
+        // built last from a lookup of them. Constructed this way the two cannot drift apart, and
+        // adding a check to the report is a matter of naming it, not copying code.
+        handlers.Add(new GetModelHealthHandler(
+            handlers.ToDictionary(h => h.Command, StringComparer.OrdinalIgnoreCase)));
 
         AssertCoverage(handlers);
         return handlers;

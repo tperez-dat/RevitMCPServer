@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Nodes;
 using ModelContextProtocol.Server;
 using RevitMCP.Contracts;
 
@@ -13,6 +14,50 @@ public sealed class ModelHealthTools(ToolGateway gateway)
 {
     private const string PagingNote =
         "Results are paged: pass the returned 'cursor' back to fetch the next page.";
+
+    [McpServerTool(Name = Commands.GetModelHealth)]
+    [Description("""
+        Runs EVERY health check and returns one report. Prefer this over calling the individual
+        checks one by one when asked to review, audit or health-check a model: it is a single
+        consistent snapshot, it cannot be half-performed, and it is one call instead of a dozen.
+
+        Read-only, so it works with write mode off.
+
+        Returns:
+          model    - title, path, file size, last written, Revit version, element count, central path
+          summary  - flat headline numbers (warnings, purgeable, cadImports, inPlaceFamilies,
+                     unplacedViews, groupTypes, revitLinks, worksets and so on), ready to report
+                     or chart directly
+          sections - each check's full payload, with how long it took
+          failures - any section that errored; the rest still ran
+
+        Detail lists are capped by detailLimit. The counts in 'summary' are totals for the whole
+        model, not of the sample — so report those, and call the individual tool
+        (GET_PURGEABLE, GET_CAD_IMPORTS, LIST_GROUPS and the rest) when a full list is wanted.
+
+        Can be slow on a large model, mostly from the purge calculation. Pass 'sections' to run a
+        subset: project, warnings, purgeable, cadImports, images, groups, inPlaceFamilies,
+        designOptions, unplacedViews, links, worksets.
+        """)]
+    public Task<string> GetModelHealth(
+        CancellationToken ct,
+        [Description("Run only these sections. Omit for all of them.")]
+        string[]? sections = null,
+        [Description("Rows of detail per section (default 25). Summary counts are unaffected.")]
+        int? detailLimit = null)
+    {
+        JsonArray? sectionList = null;
+        if (sections is { Length: > 0 })
+        {
+            sectionList = [];
+            foreach (var name in sections) sectionList.Add(name);
+        }
+
+        return gateway.CallAsync(Commands.GetModelHealth, ToolGateway.Args(
+            ("sections", sectionList), ("detailLimit", detailLimit)), ct,
+            // Every check on a large model; the purge calculation dominates.
+            timeoutMs: 600_000);
+    }
 
     [McpServerTool(Name = Commands.GetPurgeable)]
     [Description("Lists everything Revit's Purge Unused would offer to remove, grouped by category " +

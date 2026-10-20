@@ -47,6 +47,7 @@ public static class Commands
     public const string CreateDraftDetail = "CREATE_DRAFT_DETAIL";
 
     // --- model health ---
+    public const string GetModelHealth = "GET_MODEL_HEALTH";
     public const string GetPurgeable = "GET_PURGEABLE";
     public const string GetCadImports = "GET_CAD_IMPORTS";
     public const string ListImages = "LIST_IMAGES";
@@ -143,6 +144,7 @@ public static class CommandCatalog
         new(Commands.CreateFloor, CommandKind.ModelWrite, "Create a floor from a boundary polygon."),
         new(Commands.CreateDraftDetail, CommandKind.ModelWrite, "Create detail elements in a view."),
 
+        new(Commands.GetModelHealth, CommandKind.Read, "Every health check in one consistent snapshot."),
         new(Commands.GetPurgeable, CommandKind.Read, "Elements Revit's Purge Unused would remove."),
         new(Commands.GetCadImports, CommandKind.Read, "DWG/DXF imports and CAD links, and whether each is imported or linked."),
         new(Commands.ListImages, CommandKind.Read, "Raster images and PDFs placed in the model."),

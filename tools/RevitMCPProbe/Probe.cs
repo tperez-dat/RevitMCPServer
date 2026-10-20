@@ -55,6 +55,9 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         await CheckAsync(Commands.GetModelWarnings, Args(("limit", 5)), ct);
 
         // Each of these hands ids to the checks that follow.
+        // The aggregate report, kept small: it exercises every section's wiring in one call.
+        await CheckAsync(Commands.GetModelHealth, Args(("detailLimit", 3)), ct);
+
         // Model-health checks: read-only, and the slow ones are capped by paging.
         await CheckAsync(Commands.GetPurgeable, Args(("limit", 5)), ct);
         await CheckAsync(Commands.GetCadImports, Args(("limit", 5)), ct);

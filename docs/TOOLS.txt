@@ -1,7 +1,20 @@
-REVIT MCP TOOL LIST  -  50 tools
+REVIT MCP TOOL LIST  -  51 tools
 RevitMCPBridge named pipe + RevitMCPServer (MCP stdio)
 Lengths and coordinates are decimal feet throughout.
 Every list tool is paged: pass the returned 'cursor' back for the next page.
+
+MODEL HEALTH
+------------
+Read-only QC. Run with write mode off. Start with GET_MODEL_HEALTH.
+  GET_MODEL_HEALTH             Every health check in one consistent snapshot.
+  GET_PURGEABLE                Elements Revit's Purge Unused would remove.
+  GET_CAD_IMPORTS              DWG/DXF imports and CAD links, and whether each is imported or linked.
+  LIST_IMAGES                  Raster images and PDFs placed in the model.
+  LIST_GROUPS                  Model and detail groups with instance counts.
+  LIST_IN_PLACE_FAMILIES       In-place families, which cannot be reused or scheduled well.
+  LIST_DESIGN_OPTIONS          Design option sets and options, with element counts.
+  LIST_UNPLACED_VIEWS          Views not placed on any sheet.
+  GET_MODEL_WARNINGS           Model warnings.
 
 QUERY / READ TOOLS
 ------------------
@@ -13,7 +26,6 @@ No opt-in needed. These never change the model.
   GET_ELEMENT_TYPE_PROPERTIES  Type-level parameters for an element's type.
   GET_ELEMENT_LOCATION         Point or curve location of an element.
   FIND_BY_PARAM                Find elements by parameter name/value.
-  GET_MODEL_WARNINGS           Model warnings.
   LIST_CATEGORIES              Model categories.
   LIST_LEVELS                  Levels with elevation.
   LIST_PHASES                  Project phases.
@@ -32,17 +44,6 @@ No opt-in needed. These never change the model.
   GET_SELECTION                Currently selected element ids.
   BRIDGE_STATUS                Bridge health/status.
 
-MODEL HEALTH
-------------
-Read-only QC checks. Run these with write mode off.
-  GET_PURGEABLE                Elements Revit's Purge Unused would remove.
-  GET_CAD_IMPORTS              DWG/DXF imports and CAD links, and whether each is imported or linked.
-  LIST_IMAGES                  Raster images and PDFs placed in the model.
-  LIST_GROUPS                  Model and detail groups with instance counts.
-  LIST_IN_PLACE_FAMILIES       In-place families, which cannot be reused or scheduled well.
-  LIST_DESIGN_OPTIONS          Design option sets and options, with element counts.
-  LIST_UNPLACED_VIEWS          Views not placed on any sheet.
-
 SELECTION / VIEW INTERACTION
 ----------------------------
 Requires 'Allow MCP Writes' on the Revit ribbon.
@@ -52,7 +53,7 @@ Requires 'Allow MCP Writes' on the Revit ribbon.
 
 MODELLING / CREATION
 --------------------
-Requires 'Allow MCP Writes'. Each runs in one named transaction (Ctrl+Z undoes it).
+Requires 'Allow MCP Writes'. Each runs in one named transaction.
   CREATE_WALL                  Create a wall.
   CREATE_GRID                  Create a grid line.
   CREATE_STRUCTURAL_COLUMN     Place a structural column.
