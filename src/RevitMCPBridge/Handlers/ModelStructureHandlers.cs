@@ -254,18 +254,28 @@ public sealed class ListLinkedModelsHandler : IBridgeCommandHandler
                 ["instanceCount"] = instancesByType.TryGetValue(linkType.Id.Value, out var list) ? list.Count : 0
             };
 
+            // Path reporting is deliberately belt-and-braces. GetAbsolutePath returns an EMPTY
+            // ModelPath - not null - for a cloud-hosted link and for one Revit cannot currently
+            // resolve, which converts to an empty string and reads as "no path". The stored path
+            // is still there in those cases, and a cloud link is identified by its GUIDs instead.
             try
             {
                 var reference = linkType.GetExternalFileReference();
                 if (reference is not null)
                 {
                     row["pathType"] = reference.PathType.ToString();
-                    row["path"] = ModelPathUtils.ConvertModelPathToUserVisiblePath(reference.GetAbsolutePath());
+                    row["absolutePath"] = DescribePath(reference.GetAbsolutePath());
+                    row["storedPath"] = DescribePath(reference.GetPath());
+
+                    // 'path' stays the single best answer, so callers need not choose.
+                    row["path"] = row["absolutePath"]?.GetValue<string>() is { Length: > 0 } absolute
+                        ? absolute
+                        : row["storedPath"];
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // A nested or unloaded link may have no resolvable external reference.
+                row["pathError"] = ex.Message;
             }
 
             // GetLinkedFileStatus is the reliable way to tell loaded from unloaded/missing.
@@ -280,5 +290,31 @@ public sealed class ListLinkedModelsHandler : IBridgeCommandHandler
             ["links"] = rows,
             ["count"] = rows.Count
         };
+    }
+
+    /// <summary>
+    /// A ModelPath as text. Returns null rather than an empty string when there is genuinely no
+    /// path, and reports a cloud model by its GUIDs, which is the only identity it has.
+    /// </summary>
+    private static JsonNode? DescribePath(ModelPath? path)
+    {
+        if (path is null) return null;
+
+        try
+        {
+            if (path.ServerPath)
+            {
+                // A cloud or server path has no meaningful file system path; the GUIDs are it.
+                var cloud = $"cloud://{path.GetProjectGUID()}/{path.GetModelGUID()}";
+                return JsonValue.Create(cloud);
+            }
+
+            var visible = ModelPathUtils.ConvertModelPathToUserVisiblePath(path);
+            return string.IsNullOrWhiteSpace(visible) ? null : JsonValue.Create(visible);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

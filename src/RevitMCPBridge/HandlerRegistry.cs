@@ -60,6 +60,15 @@ public static class HandlerRegistry
             new CreateFloorHandler(),
             new CreateDraftDetailHandler(),
 
+            // model health
+            new GetPurgeableHandler(),
+            new GetCadImportsHandler(),
+            new ListImagesHandler(),
+            new ListGroupsHandler(),
+            new ListInPlaceFamiliesHandler(),
+            new ListDesignOptionsHandler(),
+            new ListUnplacedViewsHandler(),
+
             // editing
             new SetElementParameterHandler(),
             new DeleteElementHandler(),

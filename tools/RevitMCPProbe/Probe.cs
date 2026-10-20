@@ -55,6 +55,15 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         await CheckAsync(Commands.GetModelWarnings, Args(("limit", 5)), ct);
 
         // Each of these hands ids to the checks that follow.
+        // Model-health checks: read-only, and the slow ones are capped by paging.
+        await CheckAsync(Commands.GetPurgeable, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.GetCadImports, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListImages, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListGroups, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListInPlaceFamilies, Args(("limit", 5)), ct);
+        await CheckAsync(Commands.ListDesignOptions, null, ct);
+        await CheckAsync(Commands.ListUnplacedViews, Args(("limit", 5)), ct);
+
         var levels = await CheckAsync(Commands.ListLevels, Args(("limit", 5)), ct);
         await ProbeElementsOfFirstPopulatedCategory(ct);
         await ProbeViewsAndSheets(ct);

@@ -46,6 +46,15 @@ public static class Commands
     public const string CreateFloor = "CREATE_FLOOR";
     public const string CreateDraftDetail = "CREATE_DRAFT_DETAIL";
 
+    // --- model health ---
+    public const string GetPurgeable = "GET_PURGEABLE";
+    public const string GetCadImports = "GET_CAD_IMPORTS";
+    public const string ListImages = "LIST_IMAGES";
+    public const string ListGroups = "LIST_GROUPS";
+    public const string ListInPlaceFamilies = "LIST_IN_PLACE_FAMILIES";
+    public const string ListDesignOptions = "LIST_DESIGN_OPTIONS";
+    public const string ListUnplacedViews = "LIST_UNPLACED_VIEWS";
+
     // --- editing ---
     public const string SetElementParameter = "SET_ELEMENT_PARAMETER";
     public const string DeleteElement = "DELETE_ELEMENT";
@@ -133,6 +142,14 @@ public static class CommandCatalog
         new(Commands.CreateStructuralFraming, CommandKind.ModelWrite, "Create a beam/framing element."),
         new(Commands.CreateFloor, CommandKind.ModelWrite, "Create a floor from a boundary polygon."),
         new(Commands.CreateDraftDetail, CommandKind.ModelWrite, "Create detail elements in a view."),
+
+        new(Commands.GetPurgeable, CommandKind.Read, "Elements Revit's Purge Unused would remove."),
+        new(Commands.GetCadImports, CommandKind.Read, "DWG/DXF imports and CAD links, and whether each is imported or linked."),
+        new(Commands.ListImages, CommandKind.Read, "Raster images and PDFs placed in the model."),
+        new(Commands.ListGroups, CommandKind.Read, "Model and detail groups with instance counts."),
+        new(Commands.ListInPlaceFamilies, CommandKind.Read, "In-place families, which cannot be reused or scheduled well."),
+        new(Commands.ListDesignOptions, CommandKind.Read, "Design option sets and options, with element counts."),
+        new(Commands.ListUnplacedViews, CommandKind.Read, "Views not placed on any sheet."),
 
         new(Commands.SetElementParameter, CommandKind.ModelWrite, "Set a parameter value on one or more elements."),
         new(Commands.DeleteElement, CommandKind.ModelWrite, "Delete elements, reporting what else went with them."),
