@@ -62,6 +62,12 @@ public static class Commands
     public const string ListSharedParameters = "LIST_SHARED_PARAMETERS";
     public const string ListRoomAreaSpaceStatus = "LIST_ROOM_AREA_SPACE_STATUS";
     public const string GetElementOwnership = "GET_ELEMENT_OWNERSHIP";
+    public const string GetProjectCoordinates = "GET_PROJECT_COORDINATES";
+    public const string ListViewsWithHiddenElements = "LIST_VIEWS_WITH_HIDDEN_ELEMENTS";
+    public const string ListKeynotes = "LIST_KEYNOTES";
+
+    // --- rules ---
+    public const string EvaluateRule = "EVALUATE_RULE";
 
     // --- editing ---
     public const string SetElementParameter = "SET_ELEMENT_PARAMETER";
@@ -166,6 +172,11 @@ public static class CommandCatalog
         new(Commands.ListSharedParameters, CommandKind.Read, "Shared and project parameters, with their bindings."),
         new(Commands.ListRoomAreaSpaceStatus, CommandKind.Read, "Unplaced and unenclosed rooms, areas and spaces."),
         new(Commands.GetElementOwnership, CommandKind.Read, "Who owns or last changed elements in a workshared model."),
+        new(Commands.GetProjectCoordinates, CommandKind.Read, "Survey point, project base point, shared coordinates and site."),
+        new(Commands.ListViewsWithHiddenElements, CommandKind.Read, "Views with elements hidden one by one."),
+        new(Commands.ListKeynotes, CommandKind.Read, "Keynote table, usage, and keys the table does not define."),
+
+        new(Commands.EvaluateRule, CommandKind.Read, "Evaluate a composed filter rule against the model."),
 
         new(Commands.SetElementParameter, CommandKind.ModelWrite, "Set a parameter value on one or more elements."),
         new(Commands.DeleteElement, CommandKind.ModelWrite, "Delete elements, reporting what else went with them."),

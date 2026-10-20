@@ -11,6 +11,18 @@ if (args.Contains("--selftest"))
     return await SelfTest.RunAsync();
 }
 
+// --write-tool-docs regenerates docs/TOOLS.txt and docs/TOOLS-names.txt from the catalogue, so the
+// published tool list cannot drift from what the server actually registers.
+if (args.Contains("--write-tool-docs"))
+{
+    var index = Array.IndexOf(args, "--write-tool-docs");
+    var directory = index + 1 < args.Length && !args[index + 1].StartsWith('-')
+        ? args[index + 1]
+        : "docs";
+
+    return ToolDocs.Write(directory);
+}
+
 var builder = Host.CreateApplicationBuilder(args);
 
 // stdio is the MCP transport, so stdout carries protocol frames only: every log line must go to

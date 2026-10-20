@@ -43,7 +43,10 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
         ("filters", Commands.ListFilters),
         ("viewTemplates", Commands.ListViewTemplates),
         ("sharedParameters", Commands.ListSharedParameters),
-        ("spatialElements", Commands.ListRoomAreaSpaceStatus)
+        ("spatialElements", Commands.ListRoomAreaSpaceStatus),
+        ("coordinates", Commands.GetProjectCoordinates),
+        ("keynotes", Commands.ListKeynotes),
+        ("viewsWithHiddenElements", Commands.ListViewsWithHiddenElements)
     ];
 
     public string Command => Commands.GetModelHealth;
@@ -128,8 +131,18 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
         // Only the paged commands take a limit; the others ignore it harmlessly, but being
         // explicit keeps the intent readable.
         if (command is not (Commands.GetProjectInfo or Commands.ListDesignOptions
-                            or Commands.GetRevisions))
+                            or Commands.GetRevisions or Commands.GetProjectCoordinates))
             args["limit"] = detailLimit;
+
+        // The hidden-element scan is the one section whose cost is a product of two numbers. In the
+        // report it is deliberately shallow: enough to say whether the problem exists, with the
+        // full answer behind the dedicated tool.
+        if (command == Commands.ListViewsWithHiddenElements)
+        {
+            args["maxViews"] = 100;
+            args["maxElements"] = 3_000;
+            args["sampleSize"] = 3;
+        }
 
         var request = new BridgeRequest
         {
@@ -234,9 +247,6 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
             case "unplacedViews":
                 Copy("unplacedViews", "totalUnplaced");
                 break;
-            case "links":
-                Copy("revitLinks", "count");
-                break;
             case "worksets":
                 Copy("worksets", "totalMatched", "count");
                 break;
@@ -259,6 +269,24 @@ public sealed class GetModelHealthHandler(IReadOnlyDictionary<string, IBridgeCom
                 break;
             case "spatialElements":
                 Copy("spatialProblems", "totalProblems");
+                break;
+            case "links":
+                Copy("revitLinks", "count");
+                Copy("linkInstances", "placedInstanceCount");
+                Copy("linkInstancesUnpinned", "unpinnedInstanceCount");
+                break;
+            case "coordinates":
+                Copy("isGeoReferenced", "isGeoReferenced");
+                Copy("surveyPointClipped", "surveyPointClipped");
+                break;
+            case "keynotes":
+                Copy("keynoteEntries", "entryCount");
+                Copy("keynotesUnused", "unusedCount");
+                Copy("keynoteKeysUndefined", "undefinedKeyCount");
+                break;
+            case "viewsWithHiddenElements":
+                Copy("viewsWithHiddenElements", "viewsWithHiddenElements");
+                Copy("hiddenElementInstances", "totalHiddenInstances");
                 break;
         }
     }

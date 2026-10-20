@@ -75,6 +75,12 @@ public static class HandlerRegistry
             new ListSharedParametersHandler(),
             new ListRoomAreaSpaceStatusHandler(),
             new GetElementOwnershipHandler(),
+            new GetProjectCoordinatesHandler(),
+            new ListViewsWithHiddenElementsHandler(),
+            new ListKeynotesHandler(),
+
+            // rules
+            new EvaluateRuleHandler(),
 
             // editing
             new SetElementParameterHandler(),

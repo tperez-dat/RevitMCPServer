@@ -35,9 +35,14 @@ public sealed class ModelHealthTools(ToolGateway gateway)
         model, not of the sample — so report those, and call the individual tool
         (GET_PURGEABLE, GET_CAD_IMPORTS, LIST_GROUPS and the rest) when a full list is wanted.
 
-        Can be slow on a large model, mostly from the purge calculation. Pass 'sections' to run a
-        subset: project, warnings, purgeable, cadImports, images, groups, inPlaceFamilies,
-        designOptions, unplacedViews, links, worksets.
+        Can be slow on a large model, mostly from the purge calculation and the hidden-element
+        scan. Pass 'sections' to run a subset: project, warnings, purgeable, cadImports, images,
+        groups, inPlaceFamilies, designOptions, unplacedViews, links, worksets, revisions, filters,
+        viewTemplates, sharedParameters, spatialElements, coordinates, keynotes,
+        viewsWithHiddenElements.
+
+        The viewsWithHiddenElements section is deliberately shallow here — enough to say whether
+        the problem exists. Call LIST_VIEWS_WITH_HIDDEN_ELEMENTS for the full answer.
         """)]
     public Task<string> GetModelHealth(
         CancellationToken ct,
@@ -191,6 +196,76 @@ public sealed class ModelHealthTools(ToolGateway gateway)
         [Description("Cursor from a previous call.")] string? cursor = null) =>
         gateway.CallAsync(Commands.ListRoomAreaSpaceStatus, ToolGateway.Args(("limit", limit), ("cursor", cursor)),
             ct, timeoutMs: 120_000);
+
+    [McpServerTool(Name = Commands.GetProjectCoordinates)]
+    [Description("""
+        Reports where this model sits in space: project base point, survey point, the active named
+        coordinate system, and the geographic site (latitude, longitude, place name, and whether
+        the model is geo-referenced).
+
+        This is the first thing to check when linked models land in the wrong place, and it cannot
+        be answered by looking at elements — the answer lives on the project itself. Each point
+        reports both its position relative to the internal origin and its position in shared
+        coordinates, plus whether it is clipped and whether it is pinned. A clipped survey point is
+        tied to shared coordinates; an unclipped one has been detached and moved, which is how a
+        project quietly loses its relationship to the site survey.
+
+        Also reports the shared position of the internal origin, which is the single number two
+        models must agree on to be coordinated.
+        """)]
+    public Task<string> GetProjectCoordinates(CancellationToken ct) =>
+        gateway.CallAsync(Commands.GetProjectCoordinates, ToolGateway.Args(), ct);
+
+    [McpServerTool(Name = Commands.ListViewsWithHiddenElements)]
+    [Description("""
+        Finds views in which elements were hidden one at a time with "Hide in View" — the
+        easiest thing to leave behind in a drawing and the hardest to spot by eye. Reports each
+        view, how many elements are hidden in it, a breakdown by category, and a sample.
+
+        Hidden CATEGORIES and view filters are deliberately not reported: those are view settings,
+        not leftovers. This is element-level hides only.
+
+        Revit offers no way to ask a view for its hidden elements, so this is answered by testing
+        elements against views — a product of two numbers. Both are capped and both caps are
+        reported: when 'truncated' is true the counts are lower bounds, not totals. Pass 'viewType'
+        (e.g. Section, FloorPlan, Detail, DraftingView) to narrow it, or 'viewType': 'templates' to
+        check view templates instead of views.
+        """ + " " + PagingNote)]
+    public Task<string> ListViewsWithHiddenElements(
+        CancellationToken ct,
+        [Description("Only this view type, e.g. Section, FloorPlan, Detail. Or 'templates' for view templates.")]
+        string? viewType = null,
+        [Description("Views to test (default 300).")] int? maxViews = null,
+        [Description("Model elements tested per view (default 20000).")] int? maxElements = null,
+        [Description("Hidden elements listed per view (default 10).")] int? sampleSize = null,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListViewsWithHiddenElements, ToolGateway.Args(
+                ("viewType", viewType), ("maxViews", maxViews), ("maxElements", maxElements),
+                ("sampleSize", sampleSize), ("limit", limit), ("cursor", cursor)), ct,
+            // Views multiplied by elements; the caps bound it, but generously.
+            timeoutMs: 300_000);
+
+    [McpServerTool(Name = Commands.ListKeynotes)]
+    [Description("""
+        Reports the keynote table and how the model uses it: the keynote file's path and whether it
+        resolves, every entry with its key and text, how many keynote tags and how many elements
+        reference each, and which keys are unused.
+
+        Most useful output is 'undefinedKeys': keys the model references that the keynote file does
+        not define. Those tag blank on the sheet and are invisible in the model. A table with
+        'isLoaded': false means no keynote file is loaded at all, and every keynote in the project
+        will tag blank.
+
+        Counts elements carrying a keynote value as well as tags, because an assigned keynote that
+        nothing tags is dormant — correct, invisible, and easily lost in a type swap.
+        """ + " " + PagingNote)]
+    public Task<string> ListKeynotes(
+        CancellationToken ct,
+        [Description("Maximum rows to return (default 200, max 2000).")] int? limit = null,
+        [Description("Cursor from a previous call.")] string? cursor = null) =>
+        gateway.CallAsync(Commands.ListKeynotes, ToolGateway.Args(("limit", limit), ("cursor", cursor)),
+            ct, timeoutMs: 180_000);
 
     [McpServerTool(Name = Commands.GetElementOwnership)]
     [Description("Reports who owns what in a workshared model. Workset ownership always; " +

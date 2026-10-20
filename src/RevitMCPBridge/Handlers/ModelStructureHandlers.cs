@@ -289,6 +289,34 @@ public sealed class ListLinkedModelsHandler : IBridgeCommandHandler
                 ["instanceCount"] = instancesByType.TryGetValue(linkType.Id.Value, out var list) ? list.Count : 0
             };
 
+            // Pinned state, per instance. An unpinned link can be dragged by accident and will
+            // silently take its whole model with it, which is why every project standard asks for
+            // links to be pinned. Reported per instance, and summarised, because one unpinned
+            // instance of a link placed twice is still a problem.
+            var instances = new JsonArray();
+            var unpinned = 0;
+
+            foreach (var instance in (list ?? []).OrderBy(i => i.Id.Value))
+            {
+                var pinned = SafePinned(instance);
+                if (pinned is false) unpinned++;
+
+                instances.Add(new JsonObject
+                {
+                    ["instanceId"] = instance.Id.Value,
+                    ["pinned"] = pinned,
+                    ["workset"] = WorksetNameOf(doc, instance),
+                    ["designOption"] = instance.DesignOption?.Name
+                });
+            }
+
+            row["instances"] = instances;
+            row["unpinnedInstanceCount"] = unpinned;
+            // Every instance must be *known* to be pinned. An instance whose state could not be
+            // read is not evidence of compliance.
+            row["allInstancesPinned"] = instances.Count > 0
+                && instances.All(i => i?["pinned"]?.GetValue<bool>() == true);
+
             // Path reporting is deliberately belt-and-braces. GetAbsolutePath returns an EMPTY
             // ModelPath - not null - for a cloud-hosted link and for one Revit cannot currently
             // resolve, which converts to an empty string and reads as "no path". The stored path
@@ -323,8 +351,29 @@ public sealed class ListLinkedModelsHandler : IBridgeCommandHandler
         return new JsonObject
         {
             ["links"] = rows,
-            ["count"] = rows.Count
+            ["count"] = rows.Count,
+            ["placedInstanceCount"] = rows.Sum(r => r?["instanceCount"]?.GetValue<int>() ?? 0),
+            ["unpinnedInstanceCount"] = rows.Sum(r => r?["unpinnedInstanceCount"]?.GetValue<int>() ?? 0)
         };
+    }
+
+    /// <summary>Pinned is readable on any element, but a link whose host is gone can throw.</summary>
+    private static bool? SafePinned(Element element)
+    {
+        try { return element.Pinned; }
+        catch (Exception) { return null; }
+    }
+
+    /// <summary>
+    /// Which workset a link instance lives on. Links on the wrong workset cannot be unloaded
+    /// independently, which is the other half of the link-hygiene question.
+    /// </summary>
+    private static string? WorksetNameOf(Document doc, Element element)
+    {
+        if (!doc.IsWorkshared) return null;
+
+        try { return doc.GetWorksetTable().GetWorkset(element.WorksetId)?.Name; }
+        catch (Exception) { return null; }
     }
 
     /// <summary>

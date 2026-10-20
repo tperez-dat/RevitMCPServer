@@ -267,6 +267,63 @@ formatted display string (`8.5` and `8' - 6"`), so you can compute or quote.
 
 Every list tool is paged: pass the returned `cursor` back for the next page.
 
+The full list, in a format that pastes cleanly into a prompt, is in
+[`docs/TOOLS.txt`](docs/TOOLS.txt) (names only: [`docs/TOOLS-names.txt`](docs/TOOLS-names.txt)).
+Both are generated from the command catalogue by
+`dotnet run --project src/RevitMCPServer -- --write-tool-docs docs`, and a test fails if the
+committed copies have drifted.
+
+### Model health — read-only
+
+All of these work with write mode off, which is how a QC pass should be run.
+`GET_MODEL_HEALTH` runs every one of them in a single API context and returns one report, so the
+numbers are consistent with each other and the check cannot be half-performed.
+
+| Tool | Returns |
+| --- | --- |
+| `GET_MODEL_HEALTH` | Every check below in one snapshot, plus flat headline numbers for a dashboard |
+| `GET_PURGEABLE` | What Revit's own Purge Unused would offer to remove, grouped by category |
+| `GET_CAD_IMPORTS` | DWG/DXF content, separating permanent imports from links |
+| `LIST_IMAGES` | Raster images and PDFs, with placement counts |
+| `LIST_GROUPS` | Group types, flagging those used zero times and exactly once |
+| `LIST_IN_PLACE_FAMILIES` | In-place families, which cannot be reused and schedule poorly |
+| `LIST_DESIGN_OPTIONS` | Option sets and options, with element counts |
+| `LIST_UNPLACED_VIEWS` | Views on no sheet, summarised by view type |
+| `GET_REVISIONS` | Revision sequence, issued state, and revisions with no clouds |
+| `LIST_FILTERS` | View filters and which views apply them, including through templates |
+| `LIST_VIEW_TEMPLATES` | Templates and how many views each governs; also views with none |
+| `LIST_STYLES` | Line patterns, fill patterns, text and dimension types |
+| `LIST_SHARED_PARAMETERS` | Bound shared and project parameters with GUID, binding and categories |
+| `LIST_ROOM_AREA_SPACE_STATUS` | Rooms, areas and spaces that are unplaced or not enclosed |
+| `GET_ELEMENT_OWNERSHIP` | Who owns what in a workshared model |
+| `GET_PROJECT_COORDINATES` | Survey point, project base point, shared coordinates, geographic site |
+| `LIST_VIEWS_WITH_HIDDEN_ELEMENTS` | Views where elements were hidden one by one |
+| `LIST_KEYNOTES` | The keynote table, its usage, and keys the table does not define |
+
+`GET_PROJECT_COORDINATES` is the first thing to check when links land in the wrong place: it
+reports each point's position in both internal and shared coordinates, and whether it is clipped.
+An unclipped survey point has been detached and moved, which is how a project quietly loses its
+relationship to the site survey.
+
+### Rules — read-only
+
+| Tool | Returns |
+| --- | --- |
+| `EVALUATE_RULE` | Which elements match a composed filter rule, why, and whether the rule passed |
+
+One engine for a project's own standards, rather than a tool per standard. It speaks the same
+filter vocabulary as a Revit Model Checker check set — the same reads, the same conditions, the
+same `And`/`Or`/`Exclude` left-to-right fold — so a check transcribed from one means the same thing
+here. Every element returned carries the value each filter read off it, which is what makes the
+result actionable rather than a list of ids.
+
+Use it for naming conventions, required parameters, workset rules, duplicate checks — anything out
+of a BIM execution plan. Use a named tool above for a stable fact about Revit itself.
+
+See [`docs/RULES.md`](docs/RULES.md) for the grammar and worked rules, and
+[`docs/MODEL-CHECKER-COVERAGE.md`](docs/MODEL-CHECKER-COVERAGE.md) for how it maps onto a real
+95-check Model Checker file.
+
 ### Query / read
 
 | Tool | Returns |
@@ -283,9 +340,10 @@ Every list tool is paged: pass the returned `cursor` back for the next page.
 | `LIST_LEVELS` | Levels in elevation order |
 | `LIST_PHASES` | Phases in sequence order |
 | `LIST_WORKSETS` | Worksets (says so plainly if the model is not workshared) |
-| `LIST_LINKED_MODELS` | Linked models with load status and path |
+| `LIST_LINKED_MODELS` | Linked models with load status, path, and per-instance pinned state |
 | `GET_ACTIVE_VIEW` | The view the user is looking at, and its sheet |
 | `LIST_VIEWS` | Views, filterable by type or name |
+| `GET_VIEW_CONTENTS` | What is in a view, positioned in that view's own coordinates |
 | `LIST_SHEETS` | Sheets with revision and view count |
 | `GET_SHEET_CONTENTS` | Views and schedules placed on a sheet |
 | `GET_SCHEDULES` | Schedules with their columns (excludes titleblock revision schedules) |

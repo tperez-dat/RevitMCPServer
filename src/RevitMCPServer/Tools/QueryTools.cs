@@ -180,7 +180,10 @@ public sealed class QueryTools(ToolGateway gateway)
 
     [McpServerTool(Name = Commands.ListLinkedModels)]
     [Description("Lists linked Revit models with their load status, path, attachment type, and how " +
-                 "many instances of each are placed.")]
+                 "many instances of each are placed. Each instance also reports whether it is " +
+                 "pinned, which workset it is on, and its design option; 'unpinnedInstanceCount' " +
+                 "is the headline number, because an unpinned link can be dragged by accident and " +
+                 "takes its whole model with it.")]
     public Task<string> ListLinkedModels(CancellationToken ct) =>
         gateway.CallAsync(Commands.ListLinkedModels, ToolGateway.Args(), ct);
 

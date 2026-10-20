@@ -137,6 +137,9 @@ public sealed class ArgReader(JsonObject args, string command)
         return points;
     }
 
+    /// <summary>The raw node, for an argument whose shape a handler validates itself.</summary>
+    public JsonNode? Raw(string name) => Has(name) ? _args[name] : null;
+
     public JsonArray Array(string name) =>
         Require(name) as JsonArray ?? throw Bad($"'{name}' must be an array.");
 

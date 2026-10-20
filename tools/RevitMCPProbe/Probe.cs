@@ -73,8 +73,16 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         await CheckAsync(Commands.ListSharedParameters, Args(("limit", 5)), ct);
         await CheckAsync(Commands.ListRoomAreaSpaceStatus, Args(("limit", 5)), ct);
         await CheckAsync(Commands.GetElementOwnership, null, ct);
+        await CheckAsync(Commands.GetProjectCoordinates, null, ct);
+        await CheckAsync(Commands.ListKeynotes, Args(("limit", 5)), ct);
+
+        // Capped hard: this one is views multiplied by elements, and the probe is a smoke test,
+        // not a QC pass.
+        await CheckAsync(Commands.ListViewsWithHiddenElements,
+            Args(("limit", 5), ("maxViews", 25), ("maxElements", 1_000)), ct);
 
         var levels = await CheckAsync(Commands.ListLevels, Args(("limit", 5)), ct);
+        await ProbeRuleEngine(ct);
         await ProbeElementsOfFirstPopulatedCategory(ct);
         await ProbeViewsAndSheets(ct);
         await ProbeFamiliesAndMaterials(ct);
@@ -186,6 +194,38 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
             await CheckAsync(Commands.GetMaterialProperties, Args(("materialId", materialId)), ct);
     }
 
+    /// <summary>
+    /// Exercises the rule engine with a rule that is true of any model: every level either has a
+    /// name or does not. The point is the wiring — parsing, scoping, folding, evidence — not the
+    /// finding, so the rule is chosen to work against a model whose contents are unknown.
+    /// </summary>
+    private async Task ProbeRuleEngine(CancellationToken ct)
+    {
+        var rule = new JsonObject
+        {
+            ["name"] = "probe: levels have a name",
+            ["scope"] = new JsonObject { ["categories"] = new JsonArray { "Levels" } },
+            ["filters"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["read"] = "name",
+                    ["condition"] = "hasNoValue"
+                },
+                new JsonObject
+                {
+                    ["read"] = "category",
+                    ["condition"] = "included",
+                    ["value"] = "Levels",
+                    ["operator"] = "and"
+                }
+            },
+            ["resultCondition"] = "failMatchingElements"
+        };
+
+        await CheckAsync(Commands.EvaluateRule, Args(("rule", rule), ("limit", 5)), ct);
+    }
+
     private async Task ProbeSchedules(CancellationToken ct)
     {
         var schedules = await CheckAsync(Commands.GetSchedules, Args(("limit", 5)), ct);
@@ -271,6 +311,7 @@ public sealed class Probe(RevitMCPServer.BridgeClient client, bool verbose)
         {
             o[name] = value switch
             {
+                JsonNode node => node,
                 string s => JsonValue.Create(s),
                 bool b => JsonValue.Create(b),
                 int i => JsonValue.Create(i),
