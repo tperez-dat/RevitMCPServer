@@ -59,9 +59,13 @@ public sealed class RuleTools(ToolGateway gateway)
                       notDuplicated, matchesParameter, doesNotMatchParameter
           value     - what to compare against. 'values' takes an array instead.
                       'included' also accepts a comma-separated list in 'value'.
-          operator  - how this filter joins the ones before it: and (default), or, exclude
-                      (= and not). Filters fold strictly LEFT TO RIGHT with no precedence,
-                      exactly as a Model Checker check set does.
+          operator  - marks where a CLAUSE begins, exactly as a Model Checker check set does.
+                      'or' or 'exclude' opens a new clause; every 'and' filter after it belongs
+                      to that clause. The clauses then combine as:
+                         first clause  OR (or-clause)...  AND NOT (exclude-clause)...
+                      So [A and, B and, C exclude, D and] means (A AND B) AND NOT (C AND D),
+                      NOT ((A AND B) AND NOT C) AND D. A list of all-'and' filters is one
+                      clause and behaves as a plain conjunction.
           caseSensitive - default false
 
         Notes on specific conditions:
@@ -74,7 +78,7 @@ public sealed class RuleTools(ToolGateway gateway)
           doesNotMatchParameter / matchesParameter - compares against another parameter on the
                         same element; name it in 'otherParameter'.
 
-        Nesting, when left-to-right folding is not enough: in place of a leaf, pass
+        Nesting, when clause order is not expressive enough: in place of a leaf, pass
         { "any": [ ...filters... ] }, { "all": [...] } or { "none": [...] }.
 
         resultCondition decides what a match MEANS:

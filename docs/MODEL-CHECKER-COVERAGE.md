@@ -91,31 +91,51 @@ ownership: a stable fact about Revit belongs in a named tool, where a purpose-bu
 it better than a generic filter could. A rule out of a company check set belongs in the check set,
 because it changes every release and there are hundreds of them.
 
-`EVALUATE_RULE` folds filters strictly left to right with no precedence, which is how a Model
-Checker check set behaves. A check transcribed from the XML therefore means the same thing here.
-Nested `all` / `any` / `none` groups exist for rules written natively, where explicit grouping
-reads better than relying on fold order.
+## How the check set's filters map onto `EVALUATE_RULE`
 
-### Worked example
+Two translations matter, and both were got wrong on the first attempt here:
 
-"Every Generic Model must sit on a workset whose name starts with GM-", as one rule:
+**The operator column marks clauses, not infix operators.** `Or` and `Exclude` open a new clause
+that absorbs the `And` filters following it. Read as an infix fold, this check set's "Generic
+Models" check means `((generic AND instance) AND NOT generic) AND name~pattern` — which matches
+nothing. Read as clauses it means `(generic AND instance) AND NOT (generic AND name~pattern)`,
+which is the evident intent. `EVALUATE_RULE` implements clauses; see `docs/RULES.md`.
 
-```json
-{
-  "name": "Generic Models on a GM- workset",
-  "scope": { "categories": ["Generic Models"] },
-  "filters": [
-    { "read": "workset", "condition": "wildCardNoMatch", "value": "^GM-" }
-  ],
-  "resultCondition": "failMatchingElements"
-}
-```
+**`Category` + `Included` filters joined by `And` are a union, not an intersection.** The
+"Family Naming Convention" check joins 50 of them with `And`; nothing is in 50 categories at once,
+so they plainly mean "in any of these". In `EVALUATE_RULE` that union is `scope.categories`, which
+is why a 54-filter check becomes a 3-filter rule.
 
-Every element that comes back is a failure, and each carries the workset name it was found on as
-evidence.
+## The transcription
 
-## Still outstanding
+[`docs/rules/gdc-epoch-2.1.json`](rules/gdc-epoch-2.1.json) holds all twelve filter-based checks:
+eight as rules, four noted as better answered by a named tool. Every rule in that file is parsed by
+the engine's own grammar on each build, so it cannot rot silently.
 
-`RUN_CHECK_SET(xmlPath)` — reading a Model Checker `.xml` directly and running every check in it.
-The evaluator and the result conditions are in place; what remains is the XML parser and the
-section/heading structure the report groups by.
+Transcribing by hand rather than parsing the XML was deliberate, and the file itself shows why: the
+live **Link Model Name** check stores its naming test as `Condition="WildCard"` — a positive match
+— while its `ResultCondition` is `FailMatchingElements` and its failure message reads *"the
+following link models don't meet our model naming convention"*. As written it reports every
+correctly named link and misses the wrong ones. A parser would reproduce that faithfully and
+silently. A human reading the check noticed it. It is transcribed as `wildCardNoMatch` with the
+discrepancy recorded in the rule's description.
+
+## Do you need RUN_CHECK_SET?
+
+Probably not, and it is no longer planned.
+
+The 18 built-in checks are answered by named tools, which report them better than a generic filter
+could — `GET_MODEL_HEALTH` runs all of them in one call. The 12 filter-based checks are transcribed
+once, above. What an XML parser would add is not running the check set; it is *re-reading* the check
+set each time, and that buys little against the cost of reimplementing Autodesk's semantics for 95
+checks and owning the fidelity risk forever. Where the two disagreed, there would be two sources of
+truth and no way to tell which was right.
+
+Keep the BIM Interoperability Tools add-in for the report the project contractually expects. Use
+the MCP server for the part Model Checker cannot do: handing back element ids you can select,
+isolate and fix, and answering follow-up questions without re-running anything.
+
+One practical note if automating Model Checker itself was ever the plan: its API is **no longer
+supported** as of Interoperability Tools v10, which ships with Revit 2026. Version 9.2 keeps it for
+Revit 2022–2025. This project targets 2025–2027, so the add-in cannot be driven programmatically
+across that whole range.

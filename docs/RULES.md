@@ -33,23 +33,50 @@ compiled into the server.
 
 ## Composition
 
-Filters fold **strictly left to right with no precedence**, which is how a Revit Model Checker
-check set behaves — a check transcribed from one means the same thing here. The first filter's
-`operator` is ignored.
+In a Revit Model Checker check set the operator column marks **where a clause begins**, not how
+two neighbouring filters combine. `EVALUATE_RULE` does the same: `or` or `exclude` opens a new
+clause, and every `and` filter after it belongs to that clause. The clauses then combine as the
+union of the first and the `or` ones, minus the `exclude` ones.
 
 ```
-A and B or C   ==   ((A and B) or C)
+[A and, B and, C exclude, D and]   ==   (A AND B) AND NOT (C AND D)
+[A and, B and, C or,      D and]   ==   (A AND B)  OR     (C AND D)
 ```
+
+A list of all-`and` filters is a single clause, so the common case is a plain conjunction.
 
 `operator` is one of:
 
 | | |
 | --- | --- |
-| `and` (default) | narrows |
-| `or` | widens |
-| `exclude` | `and not` — narrows by excluding what this filter matches |
+| `and` (default) | joins the current clause |
+| `or` | opens a clause that is unioned in |
+| `exclude` | opens a clause that is subtracted |
 
-When fold order is not what you want, nest instead of relying on it:
+The first filter's `operator` is ignored — it has nothing to combine with, and a check set stores
+one there anyway.
+
+### Why it is clauses and not a fold
+
+This is worth understanding, because the other reading looks just as plausible and silently
+reports zero failures. The GDC check set's "Generic Models" check is:
+
+```
+And      Category        OST_GenericModel  Included  True
+And      TypeOrInstance  Is Element Type   Equal     False
+Exclude  Category        OST_GenericModel  Included  True
+And      Family          Name              WildCard  (?i)(knock out|interface|void|access|...)
+```
+
+As an infix fold that is `((generic AND instance) AND NOT generic) AND name~pattern`, which
+matches **nothing at all** — the third filter excludes exactly what the first included. As clauses
+it is `(generic AND instance) AND NOT (generic AND name~pattern)`: "report Generic Models except
+the ones whose name says they are legitimately generic." That is obviously the intent, and it is
+what this engine does.
+
+### Nesting
+
+When clause order is not expressive enough, nest instead of relying on it:
 
 ```json
 { "any": [
@@ -59,7 +86,7 @@ When fold order is not what you want, nest instead of relying on it:
 ```
 
 `all`, `any` and `none` all take an array of filters and may be nested further. A group carries its
-own `operator`, so it folds into the list around it like any other entry.
+own `operator`, so it joins the clause structure around it like any other entry.
 
 ## What a match means
 
@@ -233,8 +260,16 @@ Note the unit: Revit stores lengths in decimal feet, and `greaterThan` compares 
   allowed to hang Revit.
 - Results are paged. Pass the returned `cursor` back for the next page.
 
-## Still to come
+## Running a whole check set
 
-`RUN_CHECK_SET(xmlPath)` — reading a Model Checker `.xml` and running every check in it. The
-evaluator and the result conditions are in place; what remains is the XML parser and the
-section/heading structure the report groups by. See `docs/MODEL-CHECKER-COVERAGE.md`.
+Transcribe its filter-based checks into a rule file once and keep it with the project.
+[`docs/rules/gdc-epoch-2.1.json`](rules/gdc-epoch-2.1.json) is a worked example: all twelve
+filter-based checks of a real 95-check set, eight as rules and four noted as better answered by a
+named tool. Every rule in that directory is parsed by the engine's own grammar on each build, so a
+file cannot rot unnoticed.
+
+Reading the check-set XML directly is **not planned**, and
+[`docs/MODEL-CHECKER-COVERAGE.md`](MODEL-CHECKER-COVERAGE.md) explains why. The short version: the
+built-in checks are already answered by named tools, the filter-based ones transcribe once, and a
+parser would reproduce the check set's own authoring mistakes faithfully and silently — the GDC set
+has one.

@@ -82,12 +82,17 @@ public enum Condition
     MatchesParameter
 }
 
-/// <summary>How a filter joins the result accumulated by the filters before it.</summary>
+/// <summary>
+/// Where a clause begins. In a Model Checker check set this column marks structure, not an infix
+/// operator: see <see cref="RuleComposition.CombineClauses"/>.
+/// </summary>
 public enum Join
 {
+    /// <summary>Joins the clause currently being built.</summary>
     And,
+    /// <summary>Opens a clause that is unioned into the result so far.</summary>
     Or,
-    /// <summary>AND NOT: narrows the result by excluding what this filter matches.</summary>
+    /// <summary>Opens a clause that is subtracted from the result so far.</summary>
     Exclude
 }
 
@@ -116,7 +121,7 @@ public sealed record LeafFilter(
     bool CaseSensitive,
     string Label) : RuleNode(Join);
 
-/// <summary>A nested group, so a rule is not limited to one left-to-right fold.</summary>
+/// <summary>A nested group, for when clause order is not expressive enough.</summary>
 public sealed record GroupFilter(Join Join, GroupMode Mode, IReadOnlyList<RuleNode> Children)
     : RuleNode(Join);
 
@@ -128,7 +133,10 @@ public enum GroupMode
     Any,
     /// <summary>No child may match.</summary>
     None,
-    /// <summary>Children folded left to right by their own joins — Model Checker's own semantics.</summary>
+    /// <summary>
+    /// Children grouped into clauses by their own joins — a Model Checker check set's own
+    /// semantics. See <see cref="RuleComposition.CombineClauses"/>.
+    /// </summary>
     Fold
 }
 
@@ -365,4 +373,72 @@ public static class RuleParser
 
     private static RuleParseException Bad(string message) =>
         new($"{Commands.EvaluateRule}: {message}");
+}
+
+/// <summary>
+/// How a flat filter list combines into one verdict.
+///
+/// Kept separate, pure, and here rather than in the add-in because this is the part of the engine
+/// that is easy to get wrong and impossible to test against a live Revit document. It was wrong
+/// once: an earlier version read the operator column as an infix fold, which inverts the meaning of
+/// every check in a real check set that uses Exclude.
+/// </summary>
+public static class RuleComposition
+{
+    /// <summary>
+    /// Combines per-filter results the way a Revit Model Checker check set does.
+    ///
+    /// The operator column marks where a clause BEGINS, not how two neighbouring filters combine.
+    /// An <see cref="Join.Or"/> or <see cref="Join.Exclude"/> filter opens a new clause and every
+    /// <see cref="Join.And"/> filter after it belongs to that clause. The clauses then combine as
+    /// the union of the first and the Or-clauses, minus the Exclude-clauses.
+    ///
+    /// A list of all-And filters is a single clause, so it behaves as a plain conjunction.
+    /// </summary>
+    /// <param name="joins">Each filter's operator, in order.</param>
+    /// <param name="matched">Whether each filter matched, in the same order.</param>
+    public static bool CombineClauses(IReadOnlyList<Join> joins, IReadOnlyList<bool> matched)
+    {
+        if (joins.Count != matched.Count)
+            throw new ArgumentException("joins and matched must be the same length.", nameof(matched));
+
+        var included = false;
+        var seenFirst = false;
+        var index = 0;
+
+        while (index < joins.Count)
+        {
+            var opensWith = joins[index];
+
+            // The clause is this filter plus every And-joined filter following it.
+            var end = index + 1;
+            while (end < joins.Count && joins[end] == Join.And) end++;
+
+            var clause = true;
+            for (var i = index; i < end; i++) clause &= matched[i];
+
+            // The first clause opens the result whatever its own operator says. A check set ignores
+            // the leading operator too, and a leading Or or Exclude has nothing to combine with.
+            if (!seenFirst)
+            {
+                included = clause;
+                seenFirst = true;
+            }
+            else
+            {
+                included = opensWith switch
+                {
+                    Join.Or => included || clause,
+                    Join.Exclude => included && !clause,
+                    // Unreachable: an And-joined filter is absorbed into the preceding clause and
+                    // can only open one as the very first filter. Kept so a change degrades safely.
+                    _ => included && clause
+                };
+            }
+
+            index = end;
+        }
+
+        return included;
+    }
 }

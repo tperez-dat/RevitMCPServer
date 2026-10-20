@@ -1,0 +1,244 @@
+{
+  "_source": "GDC Model Health Check - For sites Epoch 2.1 (Google CAD-BIM)",
+  "_about": [
+    "The filter-based ('Custom') checks of that check set, transcribed for EVALUATE_RULE.",
+    "The other 18 live checks are built-in Model Checker types and are answered by named tools;",
+    "GET_MODEL_HEALTH runs all of those in one call. See docs/MODEL-CHECKER-COVERAGE.md.",
+    "Transcribed by hand on purpose. A parser would reproduce the check set's own authoring",
+    "mistakes faithfully and silently - see the note on 'Link Model Name' below for one."
+  ],
+  "_covered_by_a_named_tool_instead": {
+    "Imported DWG file": "GET_CAD_IMPORTS",
+    "In-Place Families": "LIST_IN_PLACE_FAMILIES (the GDC variant also excludes g-XXX families; EVALUATE_RULE has no 'is in place' read, so that exclusion is a post-filter on the tool's output)",
+    "Revit Links overlay vs Attachment": "LIST_LINKED_MODELS (attachmentType)",
+    "Revit Links": "LIST_LINKED_MODELS"
+  },
+  "rules": [
+    {
+      "name": "GDC P0: Generic Models",
+      "description": "Generic Model instances that are not one of the legitimately-generic kinds. Source: GDC Epoch 2.1, P0 / Family / 'Generic Models'.",
+      "scope": {
+        "categories": [
+          "OST_GenericModel"
+        ]
+      },
+      "filters": [
+        {
+          "read": "typeOrInstance",
+          "condition": "equal",
+          "value": "Instance"
+        },
+        {
+          "operator": "exclude",
+          "read": "family",
+          "condition": "wildCard",
+          "value": "(?i)(knock out|interface|void|access|maintenance|g-[A-Z]{3})"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P0: Unhosted Family",
+      "description": "Family instances whose Host parameter reports an orphaned host. Source: GDC Epoch 2.1, P0 / Family / 'Unhosted Family'. Whole-model scan, because the check scopes by API class rather than by category.",
+      "scope": {
+        "allCategories": true
+      },
+      "filters": [
+        {
+          "read": "apiType",
+          "condition": "equal",
+          "value": "FamilyInstance"
+        },
+        {
+          "operator": "and",
+          "read": "parameter",
+          "parameter": "Host",
+          "condition": "hasValue"
+        },
+        {
+          "operator": "and",
+          "read": "parameter",
+          "parameter": "Host",
+          "condition": "wildCard",
+          "value": "Orphaned"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P0: Unhosted Interface Points",
+      "description": "Interface-point Generic Models with no associated host. Source: GDC Epoch 2.1, P0 / Family / 'Unhosted Interface Points'.",
+      "scope": {
+        "categories": [
+          "OST_GenericModel"
+        ]
+      },
+      "filters": [
+        {
+          "read": "family",
+          "condition": "contains",
+          "value": "Interface"
+        },
+        {
+          "operator": "and",
+          "read": "parameter",
+          "parameter": "Host",
+          "condition": "wildCard",
+          "value": "<not associated>"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P0: Link Model Workset",
+      "description": "Link instances on a workset whose name does not start with 'Link'. Source: GDC Epoch 2.1, P0 / Links / 'Link Model Workset'.",
+      "scope": {
+        "categories": [
+          "OST_RvtLinks"
+        ]
+      },
+      "filters": [
+        {
+          "read": "workset",
+          "condition": "wildCardNoMatch",
+          "value": "(?i)Link.*"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P1: Link Model Name",
+      "description": "Link types whose name does not follow the GDC model naming convention. Source: GDC Epoch 2.1, P1 / Naming Convention / 'Link Model Name'. NOTE: the XML stores this filter as Condition='WildCard' (a positive match) while the check's own failure message reads \"don't meet our model naming convention\" and its ResultCondition is FailMatchingElements. As written in the XML it reports every CORRECTLY named link and misses the wrong ones. Transcribed here as wildCardNoMatch, which is the evident intent; confirm with whoever owns the check set before relying on either reading.",
+      "scope": {
+        "categories": [
+          "OST_RvtLinks"
+        ]
+      },
+      "filters": [
+        {
+          "read": "apiParameter",
+          "parameter": "ELEM_TYPE_PARAM",
+          "condition": "wildCardNoMatch",
+          "value": "^([A-Z]{3}[0-9]{1}[A-Z]{1})-(ARCH|T|S26.S35|S26|STR|EYD|MYD|MEP|GLUE|MDA|CIVILS|SRVR HALL|MDA|GEN SEC|DATA|SITE|DCH|FSA|SST|SHIRAZ|SITE CAMPUSPLAN)(-(STR|TEMPWALL|S40|S17|S45|S22|MEP|EYD|EU|STR|ARCH|S26|T|SRVR HALL|MDA|STRUCT FOUNDATIONS|GEN|GEN CUB))?(-(S14|EB|STR|GEN|EYD|FOXBAT|BRIDGING|S08|S18|S24|EYD|S25|EU|S27|S33|S40|S46|S34|S08|S11|S13|S17|S19|S21|S22|S26|S35))?(-(PEB|ACC|ACP|MDA|HILTI|VEGE|SDC|UPS|PLTFRM|GTM|BUSWAY2.1|SHIRAZ1.0|BRIDGING|PHASING|PDC|SVH|S33|S40|S46|S34|S08|S11|S13|S17|FIRE-SUPPRESSION|S19|S21|Access.Platform|S22|S26))?(-(ELEC|BRIDGE|Base|HILTI|GEN|FIRE|MECH|.KOP.|SEC|STR|))?$"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P1: Elements in Link Workset",
+      "description": "Model elements sitting on a workset reserved for links. Source: GDC Epoch 2.1, P1 / Family / 'Elements in Link Workset'. Whole-model scan, because the check scopes by API class rather than by category.",
+      "scope": {
+        "allCategories": true
+      },
+      "filters": [
+        {
+          "read": "apiType",
+          "condition": "equal",
+          "value": "FamilyInstance"
+        },
+        {
+          "operator": "and",
+          "read": "workset",
+          "condition": "wildCard",
+          "value": "(?i)LINK"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC P2: Family Naming Convention",
+      "description": "Instances across the modelled categories whose family name does not follow the g-XXX convention, excluding standard structural shapes. Source: GDC Epoch 2.1, P2 / Family / 'Family Naming Convention'. The XML spends 50 of its 54 filters listing categories; those become scope.categories here, which is the same union and leaves two filters.",
+      "scope": {
+        "categories": [
+          "OST_DuctTerminal",
+          "OST_Assemblies",
+          "OST_CableTrayFitting",
+          "OST_Casework",
+          "OST_Columns",
+          "OST_CommunicationDevices",
+          "OST_ConduitFitting",
+          "OST_DataDevices",
+          "OST_Doors",
+          "OST_DuctAccessory",
+          "OST_DuctFitting",
+          "OST_DuctInsulations",
+          "OST_DuctLinings",
+          "OST_PlaceHolderDucts",
+          "OST_DuctCurves",
+          "OST_ElectricalEquipment",
+          "OST_ElectricalFixtures",
+          "OST_FireAlarmDevices",
+          "OST_Furniture",
+          "OST_FurnitureSystems",
+          "OST_LightingDevices",
+          "OST_LightingFixtures",
+          "OST_MechanicalEquipment",
+          "OST_MechanicalEquipmentSetBoundaryLines",
+          "OST_MechanicalEquipmentSet",
+          "OST_NurseCallDevices",
+          "OST_Parking",
+          "OST_PipeAccessory",
+          "OST_PipeFitting",
+          "OST_PipeInsulations",
+          "OST_PlaceHolderPipes",
+          "OST_PipeCurves",
+          "OST_Planting",
+          "OST_PlumbingFixtures",
+          "OST_Ramps",
+          "OST_SecurityDevices",
+          "OST_ShaftOpening",
+          "OST_Site",
+          "OST_BuildingPad",
+          "OST_SpecialityEquipment",
+          "OST_Sprinklers",
+          "OST_StructConnections",
+          "OST_FabricReinforcement",
+          "OST_StructuralFraming",
+          "OST_Rebar",
+          "OST_StructuralStiffener",
+          "OST_StructuralTruss",
+          "OST_TelephoneDevices",
+          "OST_Topography",
+          "OST_Windows"
+        ]
+      },
+      "filters": [
+        {
+          "read": "apiParameter",
+          "parameter": "ELEM_FAMILY_PARAM",
+          "condition": "wildCardNoMatch",
+          "value": "g-[A-Z]{3}.*"
+        },
+        {
+          "operator": "exclude",
+          "read": "category",
+          "condition": "included",
+          "value": "OST_StructuralFraming"
+        },
+        {
+          "operator": "and",
+          "read": "family",
+          "condition": "wildCard",
+          "value": "(?i)(W-Wide Flange|L-Angle|HSS-|Concrete-)"
+        }
+      ],
+      "resultCondition": "failMatchingElements"
+    },
+    {
+      "name": "GDC MONITORING: Level Naming",
+      "description": "Lists every level for manual review. Source: GDC Epoch 2.1, MONITORING / Elements / 'Level Naming', which is CountAndList with no name test \u2014 the check set leaves the judgement to a reader. LIST_LEVELS answers this directly and in elevation order; this rule exists so the check set maps one-to-one.",
+      "scope": {
+        "categories": [
+          "OST_Levels"
+        ]
+      },
+      "filters": [
+        {
+          "read": "name",
+          "condition": "hasValue"
+        }
+      ],
+      "resultCondition": "countAndList"
+    }
+  ]
+}

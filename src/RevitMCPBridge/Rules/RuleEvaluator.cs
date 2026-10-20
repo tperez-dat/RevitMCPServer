@@ -111,35 +111,45 @@ public sealed class RuleEvaluator
     }
 
     /// <summary>
-    /// Model Checker's own composition: each filter joins the accumulated result by its own
-    /// operator, left to right, with no precedence. The first filter's operator is ignored, which
-    /// is also how the XML behaves.
+    /// Model Checker's own composition, which is NOT an infix fold.
+    ///
+    /// In a check set the operator column marks where a clause begins, not how two neighbouring
+    /// filters combine. An `Or` or `Exclude` filter starts a new clause; every `And` filter after
+    /// it belongs to that clause. The clauses then combine as a union of the `Or` ones minus the
+    /// `Exclude` ones:
+    ///
+    ///     first clause OR (or-clause) OR ... AND NOT (exclude-clause) AND NOT ...
+    ///
+    /// The GDC check set makes the difference plain. Its "Generic Models" check reads:
+    ///
+    ///     And      Category        OST_GenericModel  Included  True
+    ///     And      TypeOrInstance  Is Element Type   Equal     False
+    ///     Exclude  Category        OST_GenericModel  Included  True
+    ///     And      Family          Name              WildCard  (?i)(knock out|interface|void|...)
+    ///
+    /// Read as an infix fold that is `((generic AND instance) AND NOT generic) AND name~pattern`,
+    /// which matches nothing at all. Read as clauses it is
+    /// `(generic AND instance) AND NOT (generic AND name~pattern)` — "report Generic Models except
+    /// the ones whose name says they are legitimately generic", which is obviously the intent.
+    ///
+    /// A rule whose filters are all `And` behaves identically either way, so the common case is
+    /// unaffected.
     /// </summary>
     private bool EvaluateFold(GroupFilter group, Element element, List<Evidence> evidence)
     {
-        var accumulated = false;
-        var first = true;
+        // Every filter is evaluated rather than short-circuited, so the evidence explains the whole
+        // rule instead of stopping at the first miss, and so the clause combination below sees a
+        // complete picture.
+        var joins = new Join[group.Children.Count];
+        var matched = new bool[group.Children.Count];
 
-        foreach (var child in group.Children)
+        for (var i = 0; i < group.Children.Count; i++)
         {
-            var matched = EvaluateNode(child, element, evidence);
-
-            if (first)
-            {
-                accumulated = matched;
-                first = false;
-                continue;
-            }
-
-            accumulated = child.Join switch
-            {
-                Join.Or => accumulated || matched,
-                Join.Exclude => accumulated && !matched,
-                _ => accumulated && matched
-            };
+            joins[i] = group.Children[i].Join;
+            matched[i] = EvaluateNode(group.Children[i], element, evidence);
         }
 
-        return accumulated;
+        return RuleComposition.CombineClauses(joins, matched);
     }
 
     private bool EvaluateLeaf(LeafFilter leaf, Element element, List<Evidence> evidence)

@@ -312,17 +312,19 @@ relationship to the site survey.
 | `EVALUATE_RULE` | Which elements match a composed filter rule, why, and whether the rule passed |
 
 One engine for a project's own standards, rather than a tool per standard. It speaks the same
-filter vocabulary as a Revit Model Checker check set — the same reads, the same conditions, the
-same `And`/`Or`/`Exclude` left-to-right fold — so a check transcribed from one means the same thing
-here. Every element returned carries the value each filter read off it, which is what makes the
-result actionable rather than a list of ids.
+filter vocabulary as a Revit Model Checker check set — the same reads, the same conditions, and the
+same clause semantics for `And`/`Or`/`Exclude`, where an `Or` or `Exclude` filter opens a new
+clause rather than combining with its neighbour. Every element returned carries the value each
+filter read off it, which is what makes the result actionable rather than a list of ids.
 
 Use it for naming conventions, required parameters, workset rules, duplicate checks — anything out
 of a BIM execution plan. Use a named tool above for a stable fact about Revit itself.
 
-See [`docs/RULES.md`](docs/RULES.md) for the grammar and worked rules, and
-[`docs/MODEL-CHECKER-COVERAGE.md`](docs/MODEL-CHECKER-COVERAGE.md) for how it maps onto a real
-95-check Model Checker file.
+- [`docs/RULES.md`](docs/RULES.md) — the grammar and worked rules
+- [`docs/rules/gdc-epoch-2.1.json`](docs/rules/gdc-epoch-2.1.json) — a real 95-check Model Checker
+  set transcribed, ready to run
+- [`docs/MODEL-CHECKER-COVERAGE.md`](docs/MODEL-CHECKER-COVERAGE.md) — how the two map onto each
+  other, and why reading the check-set XML directly is not planned
 
 ### Query / read
 
